@@ -1,6 +1,8 @@
 using Blog.Models;
+using Blog.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 
 namespace Blog
 {
@@ -13,6 +15,9 @@ namespace Blog
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlite(connectionString));
+
+            builder.Services.AddScoped<FileService>();
+            builder.Services.AddScoped<InitialsProfileImageGenerator>();
 
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
@@ -44,6 +49,9 @@ namespace Blog
 
             var app = builder.Build();
 
+            string dataFolder = Path.Combine(app.Environment.ContentRootPath, "data");
+            Directory.CreateDirectory(dataFolder);
+
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
@@ -55,7 +63,7 @@ namespace Blog
                 catch (Exception ex)
                 {
                     var logger = services.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(ex, "An error occurred while migrating the database.");
+                    logger.LogError(ex, "An error occurred during application startup.");
                 }
             }
 
@@ -69,6 +77,12 @@ namespace Blog
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(Path.Combine(app.Environment.ContentRootPath, "data")),
+                RequestPath = "/data"
+            });
 
             app.UseRouting();
 

@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-
 namespace Blog.Models
 {
     public class LoginViewModel
@@ -41,5 +40,51 @@ namespace Blog.Models
         [Required]
         [Display(Name = "Last Name")]
         public string LastName { get; set; } = string.Empty;
+    }
+
+    public class ProfileViewModel
+    {
+        [Required]
+        [EmailAddress]
+        [Display(Name = "Email")]
+        public string Email { get; set; } = string.Empty;
+
+        [Required]
+        [Display(Name = "First Name")]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required]
+        [Display(Name = "Last Name")]
+        public string LastName { get; set; } = string.Empty;
+
+        [Display(Name = "Profile Picture")]
+        public IFormFile ProfilePicture { get; set; }
+
+        public string ExistingProfilePicturePath { get; set; } = string.Empty;
+
+        public bool RemoveProfilePicture { get; set; }
+
+        public string StatusMessage { get; set; } = string.Empty;
+    }
+
+    public class ChangePasswordViewModel
+    {
+        [Required]
+        [DataType(DataType.Password)]
+        [Display(Name = "Current password")]
+        public string OldPassword { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        [Display(Name = "New password")]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm new password")]
+        [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
+
+        public string StatusMessage { get; set; } = string.Empty;
     }
 }

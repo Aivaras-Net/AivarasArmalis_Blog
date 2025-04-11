@@ -6,5 +6,6 @@ namespace Blog.Models
     {
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
+        public string ProfilePicturePath { get; set; } = string.Empty;
     }
 }

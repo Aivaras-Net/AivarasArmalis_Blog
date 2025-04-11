@@ -1,0 +1,94 @@
+@model Blog.Models.ProfileViewModel
+@inject Blog.Services.InitialsProfileImageGenerator InitialsGenerator
+@{
+    ViewData["Title"] = "Profile";
+    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var profilePicPath = !string.IsNullOrEmpty(Model.ExistingProfilePicturePath)
+    ? $"/{Model.ExistingProfilePicturePath.TrimStart('/')}"
+    : $"/{InitialsGenerator.GenerateInitialsImage(Model.FirstName, Model.LastName, userId).TrimStart('/')}";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h2>@ViewData["Title"]</h2>
+
+        @if (!string.IsNullOrEmpty(Model.StatusMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @Model.StatusMessage
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+                    <div class="text-center mb-4">
+                        <img src="@profilePicPath" alt="Profile Picture"
+                            class="rounded-circle profile-picture-lg mb-3" />
+
+                        @if (!string.IsNullOrEmpty(Model.ExistingProfilePicturePath))
+                        {
+                            <div class="form-check mb-2">
+                                <input asp-for="RemoveProfilePicture" class="form-check-input" />
+                                <label asp-for="RemoveProfilePicture" class="form-check-label">Remove profile
+                                    picture</label>
+                            </div>
+                        }
+
+                        <div class="mb-3">
+                            <label asp-for="ProfilePicture" class="form-label"></label>
+                            <input asp-for="ProfilePicture" type="file" class="form-control" accept="image/*" />
+                            <span asp-validation-for="ProfilePicture" class="text-danger"></span>
+                            <div class="form-text">Recommended size: 200x200 pixels (JPG, PNG, GIF)</div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Email" class="form-label"></label>
+                        <input asp-for="Email" class="form-control" />
+                        <span asp-validation-for="Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="FirstName" class="form-label"></label>
+                                <input asp-for="FirstName" class="form-control" />
+                                <span asp-validation-for="FirstName" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="LastName" class="form-label"></label>
+                                <input asp-for="LastName" class="form-control" />
+                                <span asp-validation-for="LastName" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="mt-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Password</h5>
+                </div>
+                <div class="card-body">
+                    <p>You can <a asp-action="ChangePassword">change your password</a>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}
