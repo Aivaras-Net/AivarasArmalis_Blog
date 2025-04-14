@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
+
 namespace Blog.Models
 {
     public class LoginViewModel
@@ -60,11 +62,27 @@ namespace Blog.Models
         [Display(Name = "Profile Picture")]
         public IFormFile ProfilePicture { get; set; }
 
-        public string ExistingProfilePicturePath { get; set; } = string.Empty;
+        public string? ExistingProfilePicturePath { get; set; }
 
         public bool RemoveProfilePicture { get; set; }
 
         public string StatusMessage { get; set; } = string.Empty;
+
+        [Required]
+        [DataType(DataType.Password)]
+        [Display(Name = "Current password")]
+        public string OldPassword { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [DataType(DataType.Password)]
+        [Display(Name = "New password")]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm new password")]
+        [Compare("NewPassword", ErrorMessage = "The new password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 
     public class ChangePasswordViewModel
@@ -86,5 +104,32 @@ namespace Blog.Models
         public string ConfirmPassword { get; set; } = string.Empty;
 
         public string StatusMessage { get; set; } = string.Empty;
+    }
+
+    public class UpdateProfilePictureViewModel
+    {
+        [Display(Name = "Upload New Picture")]
+        public IFormFile? ProfilePicture { get; set; }
+
+        [Display(Name = "Remove current picture (reverts to initials)")]
+        public bool RemoveProfilePicture { get; set; }
+    }
+
+    public class UpdateEmailViewModel
+    {
+        [Required]
+        [EmailAddress]
+        public string Email { get; set; } = string.Empty;
+    }
+
+    public class UpdateNameViewModel
+    {
+        [Required]
+        [Display(Name = "First Name")]
+        public string FirstName { get; set; } = string.Empty;
+
+        [Required]
+        [Display(Name = "Last Name")]
+        public string LastName { get; set; } = string.Empty;
     }
 }
