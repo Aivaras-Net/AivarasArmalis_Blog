@@ -31,8 +31,8 @@
                             type="button" role="tab" aria-controls="picture" aria-selected="false">Picture</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#details"
-                            type="button" role="tab" aria-controls="details" aria-selected="false">Details</button>
+                        <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details"
+                            type="button" role="tab" aria-controls="details" aria-selected="true">Details</button>
                     </li>
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password"
@@ -46,7 +46,7 @@
                         @await Html.PartialAsync("_UpdatePicturePartial", Model)
                     </div>
 
-                    <div class="tab-pane fade" id="details" role="tabpanel" aria-labelledby="details-tab">
+                    <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
                         @await Html.PartialAsync("_UpdateDetailsPartial", Model)
                     </div>
 
@@ -72,14 +72,17 @@
 
             if (hasPasswordErrors) {
                 tabToActivate = '#password';
+                localStorage.setItem('activeProfileTab', tabToActivate);
             } else {
-                tabToActivate = localStorage.getItem('activeProfileTab') || '#details';
+                tabToActivate = localStorage.getItem('activeProfileTab');
+
+                if (!tabToActivate) {
+                    tabToActivate = '#details';
+                    localStorage.setItem('activeProfileTab', tabToActivate);
+                }
             }
 
-            const tabElement = document.querySelector(`#profileTabs button[data-bs-target="${tabToActivate}"]`)
-                || document.querySelector('#profileTabs button[data-bs-target="#details"]')
-                || document.querySelector('#profileTabs button:first-child');
-
+            const tabElement = document.querySelector(`#profileTabs button[data-bs-target="${tabToActivate}"]`);
             if (tabElement) {
                 const tab = new bootstrap.Tab(tabElement);
                 tab.show();

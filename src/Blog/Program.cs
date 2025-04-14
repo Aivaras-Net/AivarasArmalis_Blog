@@ -47,6 +47,14 @@ namespace Blog
 
             builder.Services.AddControllersWithViews();
 
+            builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+            builder.Services.AddTransient<IEmailSender, EmailSender>();
+            builder.Services.AddTransient<TemplateHelper>();
+
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();
+            builder.Logging.AddDebug();
+
             var app = builder.Build();
 
             string dataFolder = Path.Combine(app.Environment.ContentRootPath, "data");

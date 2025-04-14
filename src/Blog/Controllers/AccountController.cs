@@ -6,6 +6,9 @@ using Blog.Services;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
+using System.Text.Encodings.Web;
+using System.Text;
+using Microsoft.AspNetCore.WebUtilities;
 
 namespace Blog.Controllers
 {
@@ -15,17 +18,23 @@ namespace Blog.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly FileService _fileService;
         private readonly InitialsProfileImageGenerator _initialsGenerator;
+        private readonly IEmailSender _emailSender;
+        private readonly TemplateHelper _templateHelper;
 
         public AccountController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             FileService fileService,
-            InitialsProfileImageGenerator initialsGenerator)
+            InitialsProfileImageGenerator initialsGenerator,
+            IEmailSender emailSender,
+            TemplateHelper templateHelper)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _fileService = fileService;
             _initialsGenerator = initialsGenerator;
+            _emailSender = emailSender;
+            _templateHelper = templateHelper;
         }
 
         [HttpGet]
@@ -335,6 +344,114 @@ namespace Blog.Controllers
             await _signInManager.RefreshSignInAsync(user);
             TempData["StatusMessage"] = "Your password has been changed.";
             return RedirectToAction(nameof(Profile));
+        }
+
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+
+            if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
+            {
+                return RedirectToAction(nameof(ForgotPasswordConfirmation));
+            }
+
+            var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
+            var callbackUrl = Url.Action(
+                action: nameof(ResetPassword),
+                controller: "Account",
+                values: new { userId = user.Id, code = code },
+                protocol: Request.Scheme);
+
+            var replacements = new Dictionary<string, string>
+            {
+                { "FirstName", user.FirstName ?? "User" },
+                { "ResetLink", HtmlEncoder.Default.Encode(callbackUrl) },
+                { "CurrentYear", DateTime.Now.Year.ToString() }
+            };
+
+            string emailBody = await _templateHelper.GetTemplateAsync("PasswordResetEmail.html", replacements);
+
+            await _emailSender.SendEmailAsync(
+                model.Email,
+                "Reset Your Password - Blog Website",
+                emailBody);
+
+            return RedirectToAction(nameof(ForgotPasswordConfirmation));
+        }
+
+        [HttpGet]
+        public IActionResult ForgotPasswordConfirmation()
+        {
+            return View();
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword(string code = null, string userId = null)
+        {
+            if (code == null || userId == null)
+            {
+                return BadRequest("A code and user ID must be supplied for password reset.");
+            }
+
+            var model = new ResetPasswordViewModel
+            {
+                Code = code,
+                UserId = userId
+            };
+
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var user = await _userManager.FindByIdAsync(model.UserId);
+            if (user == null)
+            {
+                return RedirectToAction(nameof(ResetPasswordConfirmation));
+            }
+
+            var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(model.Code));
+
+            var result = await _userManager.ResetPasswordAsync(user, code, model.Password);
+            if (result.Succeeded)
+            {
+                return RedirectToAction(nameof(ResetPasswordConfirmation));
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult ResetPasswordConfirmation()
+        {
+            return View();
         }
     }
 }
