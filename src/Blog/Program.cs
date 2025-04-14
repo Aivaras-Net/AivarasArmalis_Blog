@@ -1,7 +1,7 @@
-using Blog.Models;
-using Blog.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Blog.Models;
+using Blog.Services;
 using Microsoft.Extensions.FileProviders;
 
 namespace Blog
@@ -47,7 +47,7 @@ namespace Blog
 
             builder.Services.AddControllersWithViews();
 
-            builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+            builder.Services.AddSingleton(EnvEmailSettingsLoader.LoadEmailSettings());
             builder.Services.AddTransient<IEmailSender, EmailSender>();
             builder.Services.AddTransient<TemplateHelper>();
 

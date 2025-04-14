@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using System.Net;
 using System.Net.Mail;
 
@@ -10,10 +9,10 @@ namespace Blog.Services
         private readonly ILogger<EmailSender> _logger;
 
         public EmailSender(
-            IOptions<EmailSettings> emailSettings,
+            EmailSettings emailSettings,
             ILogger<EmailSender> logger)
         {
-            _emailSettings = emailSettings.Value;
+            _emailSettings = emailSettings;
             _logger = logger;
         }
 
