@@ -21,28 +21,22 @@ namespace Blog
 
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
-                options.Password.RequireDigit = true;
-                options.Password.RequireLowercase = true;
-                options.Password.RequireNonAlphanumeric = true;
-                options.Password.RequireUppercase = true;
-                options.Password.RequiredLength = 6;
+                builder.Configuration.GetSection("Identity:Password").Bind(options.Password);
+                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(
+                    builder.Configuration.GetValue<int>("Identity:Lockout:DefaultLockoutTimeSpan"));
+                options.Lockout.MaxFailedAccessAttempts =
+                    builder.Configuration.GetValue<int>("Identity:Lockout:MaxFailedAccessAttempts");
 
-                options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
-                options.Lockout.MaxFailedAccessAttempts = 5;
-
-                options.User.RequireUniqueEmail = true;
+                builder.Configuration.GetSection("Identity:User").Bind(options.User);
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
             builder.Services.ConfigureApplicationCookie(options =>
             {
-                options.Cookie.HttpOnly = true;
-                options.ExpireTimeSpan = TimeSpan.FromMinutes(60);
-                options.LoginPath = "/Account/Login";
-                options.LogoutPath = "/Account/Logout";
-                options.AccessDeniedPath = "/Account/AccessDenied";
-                options.SlidingExpiration = true;
+                builder.Configuration.GetSection("Cookie").Bind(options);
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(
+                    builder.Configuration.GetValue<int>("Cookie:ExpireTimeSpan"));
             });
 
             builder.Services.AddControllersWithViews();
