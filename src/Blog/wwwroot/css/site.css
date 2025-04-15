@@ -20,3 +20,17 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+.profile-picture-lg {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border: 1px solid #dee2e6;
+}
+
+.profile-picture-sm {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    margin-right: 10px;
+}
