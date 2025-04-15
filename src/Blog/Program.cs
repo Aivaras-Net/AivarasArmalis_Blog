@@ -70,6 +70,7 @@ namespace Blog
                     {
                         RoleSeeder.SeedAdminUserAsync(services, adminSettings.Email, adminSettings.Password).Wait();
                     }
+                    ArticleSeeder.SeedDefaultArticleAsync(context).Wait();
                 }
                 catch (Exception ex)
                 {

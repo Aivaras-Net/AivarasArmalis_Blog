@@ -1,0 +1,75 @@
+@model IEnumerable<Blog.Models.Article>
+@using Microsoft.AspNetCore.Identity
+@using Blog.Models
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+
+@{
+    ViewData["Title"] = "Articles";
+    var userId = UserManager.GetUserId(User);
+    var isWriterOrAdmin = User.IsInRole("Writer") || User.IsInRole("Admin");
+}
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-4">Latest Articles</h1>
+        @if (isWriterOrAdmin)
+        {
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Write New Article
+                </a>
+        }
+    </div>
+    
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        @foreach (var article in Model)
+        {
+                <div class="col">
+                    <div class="card h-100 shadow-sm border-0">
+                        @if (!string.IsNullOrEmpty(article.ImageUrl))
+                        {
+                                <img src="@article.ImageUrl" class="card-img-top" alt="@article.Title" style="height: 200px; object-fit: cover;">
+                        }
+                        else
+                        {
+                                <div class="bg-light text-center p-5" style="height: 200px;">
+                                    <i class="bi bi-journal-text display-4 text-muted"></i>
+                                </div>
+                        }
+                        <div class="card-body">
+                            <h5 class="card-title">@article.Title</h5>
+                            <p class="card-text text-muted">@article.Summary</p>
+                        </div>
+                        <div class="card-footer bg-transparent border-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    @article.PublishedDate.ToString("MMM d, yyyy")
+                                    @if (article.Author != null)
+                                    {
+                                            <span>by @article.Author.FirstName @article.Author.LastName</span>
+                                    }
+                                </small>
+                            
+                                <div class="d-flex gap-2">
+                                    <a asp-action="Details" asp-route-id="@article.Id" class="btn btn-sm btn-outline-primary">Read</a>
+                                
+                                    @if (isWriterOrAdmin && (User.IsInRole("Admin") || article.AuthorId == userId))
+                                    {
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton-@article.Id" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="bi bi-three-dots"></i>
+                                                </button>
+                                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton-@article.Id">
+                                                    <li><a class="dropdown-item" asp-action="Edit" asp-route-id="@article.Id"><i class="bi bi-pencil me-2"></i>Edit</a></li>
+                                                    <li><a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@article.Id"><i class="bi bi-trash me-2"></i>Delete</a></li>
+                                                </ul>
+                                            </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        }
+    </div>
+</div> 

@@ -10,6 +10,8 @@ namespace Blog.Models
         {
         }
 
+        public DbSet<Article> Articles { get; set; }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
