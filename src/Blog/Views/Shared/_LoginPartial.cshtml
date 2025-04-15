@@ -1,0 +1,36 @@
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<Blog.Models.ApplicationUser> SignInManager
+@inject UserManager<Blog.Models.ApplicationUser> UserManager
+@inject Blog.Services.InitialsProfileImageGenerator InitialsGenerator
+
+<ul class="navbar-nav">
+    @if (SignInManager.IsSignedIn(User))
+    {
+        var user = await UserManager.GetUserAsync(User);
+        var profilePicPath = !string.IsNullOrEmpty(user?.ProfilePicturePath)
+        ? $"/{user.ProfilePicturePath.TrimStart('/')}"
+        : $"/{InitialsGenerator.GenerateInitialsImage(user.FirstName, user.LastName, user.Id).TrimStart('/')}";
+
+        <li class="nav-item d-flex align-items-center">
+            <img src="@profilePicPath" class="rounded-circle profile-picture-sm" alt="Profile" />
+            <span class="nav-link text-dark p-0 me-2">Hello @(user?.FirstName ?? "User")!</span>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-controller="Account" asp-action="Profile">Profile</a>
+        </li>
+        <li class="nav-item">
+            <form class="form-inline" asp-controller="Account" asp-action="Logout" method="post">
+                <button type="submit" class="nav-link btn btn-link text-dark">Logout</button>
+            </form>
+        </li>
+    }
+    else
+    {
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-controller="Account" asp-action="Register">Register</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-controller="Account" asp-action="Login">Login</a>
+        </li>
+    }
+</ul>

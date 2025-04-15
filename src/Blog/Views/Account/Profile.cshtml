@@ -1,0 +1,98 @@
+@model Blog.Models.ProfileViewModel
+@inject Blog.Services.InitialsProfileImageGenerator InitialsGenerator
+@{
+    ViewData["Title"] = "Profile";
+    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var profilePicPath = !string.IsNullOrEmpty(Model.ExistingProfilePicturePath)
+    ? $"/{Model.ExistingProfilePicturePath.TrimStart('/')}"
+    : $"/{InitialsGenerator.GenerateInitialsImage(Model.FirstName ?? "", Model.LastName ?? "", userId).TrimStart('/')}";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <h2>@ViewData["Title"]</h2>
+
+        @if (!string.IsNullOrEmpty(Model.StatusMessage))
+        {
+            <div class="alert @(Model.StatusMessage.Contains("failed") || Model.StatusMessage.Contains("Error") ? "alert-danger" : "alert-success") alert-dismissible fade show"
+                role="alert">
+                @Html.Raw(Model.StatusMessage)
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="profileTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="picture-tab" data-bs-toggle="tab" data-bs-target="#picture"
+                            type="button" role="tab" aria-controls="picture" aria-selected="false">Picture</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="details-tab" data-bs-toggle="tab" data-bs-target="#details"
+                            type="button" role="tab" aria-controls="details" aria-selected="true">Details</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password"
+                            type="button" role="tab" aria-controls="password" aria-selected="false">Password</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="profileTabsContent">
+                    <div class="tab-pane fade" id="picture" role="tabpanel" aria-labelledby="picture-tab">
+                        @await Html.PartialAsync("_UpdatePicturePartial", Model)
+                    </div>
+
+                    <div class="tab-pane fade show active" id="details" role="tabpanel" aria-labelledby="details-tab">
+                        @await Html.PartialAsync("_UpdateDetailsPartial", Model)
+                    </div>
+
+                    <div class="tab-pane fade" id="password" role="tabpanel" aria-labelledby="password-tab">
+                        @await Html.PartialAsync("_ChangePasswordPartial", Model)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const tabButtons = document.querySelectorAll('#profileTabs button');
+
+            let tabToActivate;
+
+            const hasPasswordErrors = document.querySelectorAll('.field-validation-error[data-valmsg-for^="Old"], .field-validation-error[data-valmsg-for^="New"], .field-validation-error[data-valmsg-for="ConfirmPassword"]')
+                .some(el => el.textContent.trim().length > 0);
+
+            if (hasPasswordErrors) {
+                tabToActivate = '#password';
+                localStorage.setItem('activeProfileTab', tabToActivate);
+            } else {
+                tabToActivate = localStorage.getItem('activeProfileTab');
+
+                if (!tabToActivate) {
+                    tabToActivate = '#details';
+                    localStorage.setItem('activeProfileTab', tabToActivate);
+                }
+            }
+
+            const tabElement = document.querySelector(`#profileTabs button[data-bs-target="${tabToActivate}"]`);
+            if (tabElement) {
+                const tab = new bootstrap.Tab(tabElement);
+                tab.show();
+            }
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function () {
+                    localStorage.setItem('activeProfileTab', this.dataset.bsTarget);
+                });
+            });
+        });
+    </script>
+}
