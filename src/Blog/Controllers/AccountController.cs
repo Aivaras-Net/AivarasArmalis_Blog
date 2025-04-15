@@ -99,6 +99,8 @@ namespace Blog.Controllers
                     user.ProfilePicturePath = profilePath;
                     await _userManager.UpdateAsync(user);
 
+                    await _userManager.AddToRoleAsync(user, "User");
+
                     await _signInManager.SignInAsync(user, isPersistent: false);
                     return RedirectToAction("Index", "Home");
                 }

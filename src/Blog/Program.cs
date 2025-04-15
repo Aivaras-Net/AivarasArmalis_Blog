@@ -41,7 +41,7 @@ namespace Blog
 
             builder.Services.AddControllersWithViews();
 
-            builder.Services.AddSingleton(EnvEmailSettingsLoader.LoadEmailSettings());
+            builder.Services.AddSingleton(EnvSettingsLoader.LoadEmailSettings());
             builder.Services.AddTransient<IEmailSender, EmailSender>();
             builder.Services.AddTransient<TemplateHelper>();
 
@@ -61,6 +61,15 @@ namespace Blog
                 {
                     var context = services.GetRequiredService<ApplicationDbContext>();
                     context.Database.Migrate();
+
+                    RoleSeeder.SeedRolesAsync(services).Wait();
+
+                    var adminSettings = EnvSettingsLoader.LoadAdminSettings();
+
+                    if (!string.IsNullOrEmpty(adminSettings.Email) && !string.IsNullOrEmpty(adminSettings.Password))
+                    {
+                        RoleSeeder.SeedAdminUserAsync(services, adminSettings.Email, adminSettings.Password).Wait();
+                    }
                 }
                 catch (Exception ex)
                 {

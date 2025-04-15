@@ -2,16 +2,23 @@ using DotNetEnv;
 
 namespace Blog.Services
 {
-    public class EnvEmailSettingsLoader
+    public class EnvSettingsLoader
     {
+        /// <summary>
+        /// Loads environment variables from .env file
+        /// </summary>
+        private static void LoadEnvironmentVariables()
+        {
+            Env.Load();
+        }
+
         /// <summary>
         /// Loads email settings from .env file
         /// </summary>
         /// <returns>EmailSettings object populated from environment variables</returns>
         public static EmailSettings LoadEmailSettings()
         {
-            // Load .env file into environment variables
-            Env.Load();
+            LoadEnvironmentVariables();
 
             return new EmailSettings
             {
@@ -24,5 +31,26 @@ namespace Blog.Services
                 SenderName = Environment.GetEnvironmentVariable("EMAIL_SENDER_NAME") ?? "Blog Application"
             };
         }
+
+        /// <summary>
+        /// Loads admin user settings from .env file
+        /// </summary>
+        /// <returns>AdminSettings object populated from environment variables</returns>
+        public static AdminSettings LoadAdminSettings()
+        {
+            LoadEnvironmentVariables();
+
+            return new AdminSettings
+            {
+                Email = Environment.GetEnvironmentVariable("ADMIN_EMAIL") ?? "",
+                Password = Environment.GetEnvironmentVariable("ADMIN_PASSWORD") ?? ""
+            };
+        }
+    }
+
+    public class AdminSettings
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
     }
 }
