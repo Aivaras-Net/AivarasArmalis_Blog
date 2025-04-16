@@ -65,13 +65,34 @@
                     </div>
                     <div class="card-footer bg-transparent border-0">
                         <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted">
-                                @article.PublishedDate.ToString("MMM d, yyyy")
+                            <div class="d-flex align-items-center">
                                 @if (article.Author != null)
                                 {
-                                    <span>by @article.Author.FirstName @article.Author.LastName</span>
+                                    @if (!string.IsNullOrEmpty(article.Author.ProfilePicturePath))
+                                    {
+                                        <img src="/@article.Author.ProfilePicturePath"
+                                            alt="@article.Author.FirstName @article.Author.LastName" class="rounded-circle me-2"
+                                            style="width: 30px; height: 30px; object-fit: cover;">
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-light rounded-circle me-2 d-flex align-items-center justify-content-center"
+                                            style="width: 30px; height: 30px;">
+                                            <i class="bi bi-person"></i>
+                                        </div>
+                                    }
+                                    <small class="text-muted">
+                                        @article.PublishedDate.ToString("MMM d, yyyy")
+                                        <span>by @article.Author.FirstName @article.Author.LastName</span>
+                                    </small>
                                 }
-                            </small>
+                                else
+                                {
+                                    <small class="text-muted">
+                                        @article.PublishedDate.ToString("MMM d, yyyy")
+                                    </small>
+                                }
+                            </div>
 
                             <div class="d-flex gap-2">
                                 <a asp-action="Details" asp-route-id="@article.Id"
