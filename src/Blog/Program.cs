@@ -4,6 +4,7 @@ using Blog.Models;
 using Blog.Services;
 using Microsoft.Extensions.FileProviders;
 using System.Runtime.Versioning;
+using Blog.Controllers;
 
 namespace Blog
 {
@@ -20,6 +21,16 @@ namespace Blog
 
             builder.Services.AddScoped<FileService>();
             builder.Services.AddScoped<InitialsProfileImageGenerator>();
+
+            builder.Services.AddScoped<IArticleService, ArticleService>();
+            builder.Services.AddScoped<IAccountService, AccountService>();
+            builder.Services.AddScoped<IRoleService, RoleService>();
+            builder.Services.AddScoped<IValidationService, ValidationService>();
+
+            builder.Services.AddScoped<ILogger<ArticlesController>, Logger<ArticlesController>>();
+            builder.Services.AddScoped<ILogger<AccountController>, Logger<AccountController>>();
+            builder.Services.AddScoped<ILogger<RolesController>, Logger<RolesController>>();
+            builder.Services.AddScoped<ILogger<HomeController>, Logger<HomeController>>();
 
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {

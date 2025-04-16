@@ -1,41 +1,34 @@
 using Blog.Models;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
-using Microsoft.Extensions.Logging;
+using Blog.Services;
 
 namespace Blog.Controllers
 {
     public class ArticlesController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IArticleService _articleService;
+        private readonly IValidationService _validationService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<ArticlesController> _logger;
 
         public ArticlesController(
-            ApplicationDbContext context,
+            IArticleService articleService,
+            IValidationService validationService,
             UserManager<ApplicationUser> userManager,
             ILogger<ArticlesController> logger)
         {
-            _context = context;
+            _articleService = articleService;
+            _validationService = validationService;
             _userManager = userManager;
             _logger = logger;
         }
 
         public async Task<IActionResult> Index()
         {
-            var articles = await _context.Articles
-                .Include(a => a.Author)
-                .Include(a => a.Votes)
-                .ToListAsync();
-
-            articles = articles
-                .OrderByDescending(a => a.VoteScore)
-                .ThenByDescending(a => a.PublishedDate)
-                .ToList();
-
+            var articles = await _articleService.GetAllArticlesAsync();
             return View(articles);
         }
 
@@ -46,10 +39,7 @@ namespace Blog.Controllers
                 return NotFound();
             }
 
-            var article = await _context.Articles
-                .Include(a => a.Author)
-                .Include(a => a.Votes)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var article = await _articleService.GetArticleByIdAsync(id);
 
             if (article == null)
             {
@@ -59,8 +49,8 @@ namespace Blog.Controllers
             if (User.Identity != null && User.Identity.IsAuthenticated)
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                ViewBag.CurrentUserVote = article.Votes
-                    .FirstOrDefault(v => v.UserId == userId);
+                var userVote = await _articleService.GetUserVoteAsync(article.Id, userId);
+                ViewBag.CurrentUserVote = userVote;
             }
 
             return View(article);
@@ -80,50 +70,24 @@ namespace Blog.Controllers
             _logger.LogInformation("Create POST called with article: Title={Title}, SummaryLength={SummaryLength}, ContentLength={ContentLength}",
                 article.Title, article.Summary?.Length ?? 0, article.Content?.Length ?? 0);
 
-            ModelState.Remove("AuthorId");
-
-            if (string.IsNullOrWhiteSpace(article.Title))
+            if (!_validationService.ValidateArticle(article, ModelState))
             {
-                ModelState.AddModelError("Title", "Title is required");
-            }
-            else
-            {
-                ModelState.Remove("Summary");
-                ModelState.Remove("Content");
-                ModelState.Remove("ImageUrl");
+                LogValidationErrors();
+                return View(article);
             }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                    _logger.LogInformation("Setting AuthorId to current user: {UserId}", userId);
-                    article.AuthorId = userId ?? string.Empty;
-                    article.PublishedDate = DateTime.Now;
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            _logger.LogInformation("Setting AuthorId to current user: {UserId}", userId);
 
-                    _context.Add(article);
-                    await _context.SaveChangesAsync();
-                    _logger.LogInformation("Article created successfully with ID: {ArticleId}", article.Id);
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error creating article");
-                    ModelState.AddModelError("", "An error occurred while saving the article. Please try again.");
-                    return View(article);
-                }
+            var createdArticle = await _articleService.CreateArticleAsync(article, userId ?? string.Empty);
+
+            if (createdArticle != null)
+            {
+                _logger.LogInformation("Article created successfully with ID: {ArticleId}", createdArticle.Id);
+                return RedirectToAction(nameof(Index));
             }
 
-            foreach (var state in ModelState)
-            {
-                if (state.Value.Errors.Any())
-                {
-                    _logger.LogWarning("Validation error for {Property}: {Error}",
-                        state.Key, string.Join(", ", state.Value.Errors.Select(e => e.ErrorMessage)));
-                }
-            }
-
+            ModelState.AddModelError("", "An error occurred while saving the article. Please try again.");
             return View(article);
         }
 
@@ -135,7 +99,7 @@ namespace Blog.Controllers
                 return NotFound();
             }
 
-            var article = await _context.Articles.FindAsync(id);
+            var article = await _articleService.GetArticleByIdAsync(id);
             if (article == null)
             {
                 return NotFound();
@@ -163,75 +127,24 @@ namespace Blog.Controllers
                 return NotFound();
             }
 
-            var existingArticle = await _context.Articles.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
-            if (existingArticle == null)
+            if (!_validationService.ValidateArticle(article, ModelState))
             {
-                _logger.LogWarning("Article with ID {Id} not found", id);
-                return NotFound();
+                LogValidationErrors();
+                return View(article);
             }
 
-            if (!User.IsInRole("Admin") && existingArticle.AuthorId != User.FindFirstValue(ClaimTypes.NameIdentifier))
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            bool isAdmin = User.IsInRole("Admin");
+
+            var updatedArticle = await _articleService.UpdateArticleAsync(article, userId ?? string.Empty, isAdmin);
+
+            if (updatedArticle != null)
             {
-                _logger.LogWarning("User tried to edit an article they don't own");
-                return Forbid();
+                _logger.LogInformation("Article updated successfully");
+                return RedirectToAction(nameof(Index));
             }
 
-            ModelState.Remove("AuthorId");
-
-            if (string.IsNullOrWhiteSpace(article.Title))
-            {
-                ModelState.AddModelError("Title", "Title is required");
-            }
-            else
-            {
-                ModelState.Remove("Summary");
-                ModelState.Remove("Content");
-                ModelState.Remove("ImageUrl");
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    article.AuthorId = existingArticle.AuthorId;
-                    article.PublishedDate = existingArticle.PublishedDate;
-                    article.LastUpdated = DateTime.Now;
-
-                    _context.Update(article);
-                    await _context.SaveChangesAsync();
-                    _logger.LogInformation("Article updated successfully");
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (DbUpdateConcurrencyException ex)
-                {
-                    if (!ArticleExists(article.Id))
-                    {
-                        _logger.LogWarning("Concurrency error: Article with ID {Id} no longer exists", article.Id);
-                        return NotFound();
-                    }
-                    else
-                    {
-                        _logger.LogError(ex, "Concurrency error updating article {Id}", article.Id);
-                        throw;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error updating article {Id}", article.Id);
-                    ModelState.AddModelError("", "An error occurred while updating the article. Please try again.");
-                    return View(article);
-                }
-            }
-
-            foreach (var state in ModelState)
-            {
-                if (state.Value.Errors.Any())
-                {
-                    _logger.LogWarning("Validation error for {Property}: {Error}",
-                        state.Key, string.Join(", ", state.Value.Errors.Select(e => e.ErrorMessage)));
-                }
-            }
-
+            ModelState.AddModelError("", "An error occurred while updating the article. Please try again.");
             return View(article);
         }
 
@@ -243,9 +156,7 @@ namespace Blog.Controllers
                 return NotFound();
             }
 
-            var article = await _context.Articles
-                .Include(a => a.Author)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var article = await _articleService.GetArticleByIdAsync(id);
 
             if (article == null)
             {
@@ -265,7 +176,7 @@ namespace Blog.Controllers
         [Authorize(Roles = "Admin,Writer")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var article = await _context.Articles.FindAsync(id);
+            var article = await _articleService.GetArticleByIdAsync(id);
             if (article == null)
             {
                 return NotFound();
@@ -276,14 +187,15 @@ namespace Blog.Controllers
                 return Forbid();
             }
 
-            _context.Articles.Remove(article);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
+            var result = await _articleService.DeleteArticleAsync(id);
+            if (result)
+            {
+                _logger.LogInformation("Article deleted successfully");
+                return RedirectToAction(nameof(Index));
+            }
 
-        private bool ArticleExists(int id)
-        {
-            return _context.Articles.Any(e => e.Id == id);
+            _logger.LogError("Failed to delete article with ID {Id}", id);
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
@@ -291,46 +203,17 @@ namespace Blog.Controllers
         [Authorize(Roles = "Admin,Critic")]
         public async Task<IActionResult> Vote(int id, bool isUpvote)
         {
-            var article = await _context.Articles
-                .Include(a => a.Votes)
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (article == null)
-            {
-                return NotFound();
-            }
-
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction(nameof(Details), new { id });
+                return Unauthorized();
             }
 
-            var existingVote = await _context.Votes
-                .FirstOrDefaultAsync(v => v.ArticleId == id && v.UserId == userId);
-
-            if (existingVote != null)
+            var result = await _articleService.VoteAsync(id, userId, isUpvote);
+            if (!result)
             {
-                if (existingVote.IsUpvote != isUpvote)
-                {
-                    existingVote.IsUpvote = isUpvote;
-                    existingVote.CreatedDate = DateTime.Now;
-                    _context.Update(existingVote);
-                    await _context.SaveChangesAsync();
-                }
-            }
-            else
-            {
-                var vote = new Vote
-                {
-                    ArticleId = id,
-                    UserId = userId ?? string.Empty,
-                    IsUpvote = isUpvote,
-                    CreatedDate = DateTime.Now
-                };
-
-                _context.Votes.Add(vote);
-                await _context.SaveChangesAsync();
+                _logger.LogWarning("Vote failed for article {Id}", id);
+                return BadRequest("Failed to vote on the article");
             }
 
             return RedirectToAction(nameof(Details), new { id });
@@ -342,21 +225,31 @@ namespace Blog.Controllers
         public async Task<IActionResult> RemoveVote(int id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId == null)
+            if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction(nameof(Details), new { id });
+                return Unauthorized();
             }
 
-            var vote = await _context.Votes
-                .FirstOrDefaultAsync(v => v.ArticleId == id && v.UserId == userId);
-
-            if (vote != null)
+            var result = await _articleService.RemoveVoteAsync(id, userId);
+            if (!result)
             {
-                _context.Votes.Remove(vote);
-                await _context.SaveChangesAsync();
+                _logger.LogWarning("Remove vote failed for article {Id}", id);
+                return BadRequest("Failed to remove vote from the article");
             }
 
             return RedirectToAction(nameof(Details), new { id });
+        }
+
+        private void LogValidationErrors()
+        {
+            foreach (var state in ModelState)
+            {
+                if (state.Value.Errors.Any())
+                {
+                    _logger.LogWarning("Validation error for {Property}: {Error}",
+                        state.Key, string.Join(", ", state.Value.Errors.Select(e => e.ErrorMessage)));
+                }
+            }
         }
     }
 }

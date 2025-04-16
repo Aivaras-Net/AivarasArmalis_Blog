@@ -2,78 +2,53 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Blog.Models;
 using Microsoft.AspNetCore.Authorization;
+using Blog.Services;
 
 namespace Blog.Controllers
 {
     [Authorize(Roles = "Admin")]
     public class RolesController : Controller
     {
+        private readonly IRoleService _roleService;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly ILogger<RolesController> _logger;
 
         public RolesController(
+            IRoleService roleService,
             UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager)
+            ILogger<RolesController> logger)
         {
+            _roleService = roleService;
             _userManager = userManager;
-            _roleManager = roleManager;
+            _logger = logger;
         }
 
         [HttpGet]
         public IActionResult Index()
         {
-            var roles = _roleManager.Roles.ToList();
+            var roles = _roleService.GetAllRoles();
             return View(roles);
         }
 
         [HttpGet]
         public async Task<IActionResult> ManageUsers()
         {
-            var users = _userManager.Users.ToList();
-            var userRolesViewModel = new List<UserRolesViewModel>();
-
-            foreach (var user in users)
-            {
-                var userRoles = await _userManager.GetRolesAsync(user);
-                var viewModel = new UserRolesViewModel
-                {
-                    UserId = user.Id,
-                    Email = user.Email ?? string.Empty,
-                    FullName = $"{user.FirstName} {user.LastName}",
-                    Roles = userRoles.ToList()
-                };
-                userRolesViewModel.Add(viewModel);
-            }
-
+            var userRolesViewModel = await _roleService.GetAllUserRolesAsync();
             return View(userRolesViewModel);
         }
 
         [HttpGet]
         public async Task<IActionResult> ManageUserRoles(string userId)
         {
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _roleService.GetUserByIdAsync(userId);
             if (user == null)
             {
                 return NotFound();
             }
 
-            var model = new List<ManageUserRolesViewModel>();
-            var roles = _roleManager.Roles.ToList();
-            var userRoles = await _userManager.GetRolesAsync(user);
-
+            var model = await _roleService.GetUserRolesViewModelAsync(userId);
             var currentUser = await _userManager.GetUserAsync(User);
             bool isCurrentUser = currentUser?.Id == userId;
-
-            foreach (var role in roles)
-            {
-                var userRolesViewModel = new ManageUserRolesViewModel
-                {
-                    RoleId = role.Id,
-                    RoleName = role.Name ?? string.Empty,
-                    Selected = userRoles.Contains(role.Name ?? string.Empty)
-                };
-                model.Add(userRolesViewModel);
-            }
 
             ViewBag.UserName = $"{user.FirstName} {user.LastName}";
             ViewBag.UserId = userId;
@@ -86,44 +61,18 @@ namespace Blog.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateUserRoles(string userId, List<ManageUserRolesViewModel> model)
         {
-            var user = await _userManager.FindByIdAsync(userId);
+            var user = await _roleService.GetUserByIdAsync(userId);
             if (user == null)
             {
                 return NotFound();
             }
 
             var currentUser = await _userManager.GetUserAsync(User);
-            bool isCurrentUserAdmin = currentUser?.Id == userId;
-            bool adminRoleChanged = false;
+            var currentUserId = currentUser?.Id ?? string.Empty;
 
-            if (isCurrentUserAdmin)
-            {
-                var adminRole = await _roleManager.FindByNameAsync("Admin");
-                if (adminRole != null)
-                {
-                    var adminRoleInModel = model.FirstOrDefault(r => r.RoleName == "Admin");
+            var (succeeded, adminRoleChanged) = await _roleService.UpdateUserRolesAsync(userId, currentUserId, model);
 
-                    if (adminRoleInModel != null && !adminRoleInModel.Selected)
-                    {
-                        adminRoleInModel.Selected = true;
-                        adminRoleChanged = true;
-                    }
-                }
-            }
-
-            var roles = await _userManager.GetRolesAsync(user);
-
-            var removeResult = await _userManager.RemoveFromRolesAsync(user, roles);
-            if (!removeResult.Succeeded)
-            {
-                TempData["Error"] = "Failed to remove user roles.";
-                return RedirectToAction(nameof(ManageUsers));
-            }
-
-            var selectedRoles = model.Where(x => x.Selected).Select(y => y.RoleName).ToList();
-            var addResult = await _userManager.AddToRolesAsync(user, selectedRoles);
-
-            if (addResult.Succeeded)
+            if (succeeded)
             {
                 if (adminRoleChanged)
                 {
@@ -136,7 +85,8 @@ namespace Blog.Controllers
             }
             else
             {
-                TempData["Error"] = "Failed to add user to roles.";
+                TempData["Error"] = "Failed to update user roles.";
+                _logger.LogError("Failed to update roles for user {UserId}", userId);
             }
 
             return RedirectToAction(nameof(ManageUsers));
