@@ -68,7 +68,7 @@ namespace Blog.Services
                 user.ProfilePicturePath = profilePath;
                 await _userManager.UpdateAsync(user);
 
-                await _userManager.AddToRoleAsync(user, "User");
+                await _userManager.AddToRoleAsync(user, WebConstants.UserRoleName);
                 await _signInManager.SignInAsync(user, isPersistent: false);
 
                 return (result, user);
@@ -83,7 +83,7 @@ namespace Blog.Services
             {
                 string? oldProfilePicturePath = user.ProfilePicturePath;
                 bool hadCustomPicture = !string.IsNullOrEmpty(oldProfilePicturePath) &&
-                                       !oldProfilePicturePath.Contains("data/UserImages/initials/");
+                                       !oldProfilePicturePath.Contains(WebConstants.InitialsImagePath);
 
                 if (model.RemoveProfilePicture && hadCustomPicture)
                 {
@@ -111,7 +111,7 @@ namespace Blog.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating profile picture for user {UserId}", user.Id);
+                _logger.LogError(ex, WebConstants.LogProfilePictureUpdateError, user.Id);
                 return false;
             }
         }
@@ -145,7 +145,7 @@ namespace Blog.Services
 
             // Update profile picture if it's an initials image
             if (!string.IsNullOrEmpty(user.ProfilePicturePath) &&
-                user.ProfilePicturePath.Contains("data/UserImages/initials/"))
+                user.ProfilePicturePath.Contains(WebConstants.InitialsImagePath))
             {
                 string oldPath = user.ProfilePicturePath;
                 user.ProfilePicturePath = _initialsGenerator.GenerateInitialsImage(firstName, lastName, user.Id);
@@ -188,14 +188,14 @@ namespace Blog.Services
 
                 await _emailSender.SendEmailAsync(
                     user.Email ?? string.Empty,
-                    "Reset Your Password",
+                    WebConstants.PasswordResetEmailSubject,
                     emailBody);
 
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send password reset email to {Email}", user.Email);
+                _logger.LogError(ex, WebConstants.LogPasswordResetEmailFailed, user.Email);
                 return false;
             }
         }

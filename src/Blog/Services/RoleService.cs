@@ -98,10 +98,10 @@ namespace Blog.Services
 
             if (isCurrentUserAdmin)
             {
-                var adminRole = await _roleManager.FindByNameAsync("Admin");
+                var adminRole = await _roleManager.FindByNameAsync(WebConstants.AdminRoleName);
                 if (adminRole != null)
                 {
-                    var adminRoleInModel = model.FirstOrDefault(r => r.RoleName == "Admin");
+                    var adminRoleInModel = model.FirstOrDefault(r => r.RoleName == WebConstants.AdminRoleName);
 
                     if (adminRoleInModel != null && !adminRoleInModel.Selected)
                     {
@@ -116,7 +116,7 @@ namespace Blog.Services
 
             if (!removeResult.Succeeded)
             {
-                _logger.LogWarning("Failed to remove roles from user {UserId}", userId);
+                _logger.LogWarning(WebConstants.LogFailedToRemoveRoles, userId);
                 return (false, adminRoleChanged);
             }
 

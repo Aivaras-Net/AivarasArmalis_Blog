@@ -58,7 +58,7 @@ namespace Blog.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError(string.Empty, WebConstants.InvalidLoginAttempt);
                     return View(model);
                 }
             }
@@ -111,7 +111,7 @@ namespace Blog.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound(string.Format(WebConstants.UserNotFound, _userManager.GetUserId(User)));
             }
 
             var model = new ProfileViewModel
@@ -154,18 +154,19 @@ namespace Blog.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound(string.Format(WebConstants.UserNotFound, _userManager.GetUserId(User)));
             }
 
             var result = await _accountService.UpdateProfilePictureAsync(user, model);
 
             if (result)
             {
-                TempData["StatusMessage"] = "Your profile picture has been updated";
+                TempData["StatusMessage"] = WebConstants.ProfilePictureUpdated;
             }
             else
             {
-                TempData["StatusMessage"] = "Error changing profile picture";
+                _logger.LogError(WebConstants.LogProfilePictureUpdateError, user.Id);
+                TempData["StatusMessage"] = WebConstants.ProfilePictureUpdateError;
             }
 
             return RedirectToAction(nameof(Profile));
@@ -179,7 +180,7 @@ namespace Blog.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound(string.Format(WebConstants.UserNotFound, _userManager.GetUserId(User)));
             }
 
             if (!_validationService.ValidateUserEmailUpdate(model.Email, ModelState))
@@ -192,7 +193,7 @@ namespace Blog.Controllers
 
             if (result.Succeeded)
             {
-                TempData["StatusMessage"] = "Your email has been updated";
+                TempData["StatusMessage"] = WebConstants.EmailUpdated;
             }
             else
             {
@@ -212,7 +213,7 @@ namespace Blog.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound(string.Format(WebConstants.UserNotFound, _userManager.GetUserId(User)));
             }
 
             if (!_validationService.ValidateUserNameUpdate(model.FirstName, model.LastName, ModelState))
@@ -231,7 +232,7 @@ namespace Blog.Controllers
 
             if (result.Succeeded)
             {
-                TempData["StatusMessage"] = "Your name has been updated";
+                TempData["StatusMessage"] = WebConstants.NameUpdated;
             }
             else
             {
@@ -250,7 +251,7 @@ namespace Blog.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound(string.Format(WebConstants.UserNotFound, _userManager.GetUserId(User)));
             }
 
             if (!ModelState.IsValid)
@@ -264,7 +265,7 @@ namespace Blog.Controllers
 
             if (result.Succeeded)
             {
-                TempData["StatusMessage"] = "Your password has been changed";
+                TempData["StatusMessage"] = WebConstants.PasswordChanged;
             }
             else
             {
@@ -310,7 +311,8 @@ namespace Blog.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError("", "There was an error sending the password reset email. Please try again.");
+                    _logger.LogError(WebConstants.LogPasswordResetEmailFailed, user.Email);
+                    ModelState.AddModelError("", WebConstants.PasswordResetEmailError);
                     return View(model);
                 }
             }
@@ -329,7 +331,7 @@ namespace Blog.Controllers
         {
             if (code == null || userId == null)
             {
-                ModelState.AddModelError("", "Invalid password reset code or user ID.");
+                ModelState.AddModelError("", WebConstants.InvalidPasswordResetCode);
                 return View();
             }
 

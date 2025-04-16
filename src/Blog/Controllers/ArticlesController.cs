@@ -67,7 +67,7 @@ namespace Blog.Controllers
         [Authorize(Roles = "Admin,Writer")]
         public async Task<IActionResult> Create(Article article)
         {
-            _logger.LogInformation("Create POST called with article: Title={Title}, SummaryLength={SummaryLength}, ContentLength={ContentLength}",
+            _logger.LogInformation(WebConstants.LogArticleCreateCalled,
                 article.Title, article.Summary?.Length ?? 0, article.Content?.Length ?? 0);
 
             if (!_validationService.ValidateArticle(article, ModelState))
@@ -77,17 +77,17 @@ namespace Blog.Controllers
             }
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            _logger.LogInformation("Setting AuthorId to current user: {UserId}", userId);
+            _logger.LogInformation(WebConstants.LogSetAuthorId, userId);
 
             var createdArticle = await _articleService.CreateArticleAsync(article, userId ?? string.Empty);
 
             if (createdArticle != null)
             {
-                _logger.LogInformation("Article created successfully with ID: {ArticleId}", createdArticle.Id);
+                _logger.LogInformation(WebConstants.LogArticleCreated, createdArticle.Id);
                 return RedirectToAction(nameof(Index));
             }
 
-            ModelState.AddModelError("", "An error occurred while saving the article. Please try again.");
+            ModelState.AddModelError("", WebConstants.ArticleCreationError);
             return View(article);
         }
 
@@ -118,12 +118,12 @@ namespace Blog.Controllers
         [Authorize(Roles = "Admin,Writer")]
         public async Task<IActionResult> Edit(int id, Article article)
         {
-            _logger.LogInformation("Edit POST called with article ID: {Id}, SummaryLength: {SummaryLength}, ContentLength: {ContentLength}",
+            _logger.LogInformation(WebConstants.LogArticleEditCalled,
                 id, article.Summary?.Length ?? 0, article.Content?.Length ?? 0);
 
             if (id != article.Id)
             {
-                _logger.LogWarning("ID mismatch: {RouteId} vs {ModelId}", id, article.Id);
+                _logger.LogWarning(WebConstants.LogIdMismatch, id, article.Id);
                 return NotFound();
             }
 
@@ -140,11 +140,11 @@ namespace Blog.Controllers
 
             if (updatedArticle != null)
             {
-                _logger.LogInformation("Article updated successfully");
+                _logger.LogInformation(WebConstants.LogArticleUpdated);
                 return RedirectToAction(nameof(Index));
             }
 
-            ModelState.AddModelError("", "An error occurred while updating the article. Please try again.");
+            ModelState.AddModelError("", WebConstants.ArticleUpdateError);
             return View(article);
         }
 
@@ -190,11 +190,11 @@ namespace Blog.Controllers
             var result = await _articleService.DeleteArticleAsync(id);
             if (result)
             {
-                _logger.LogInformation("Article deleted successfully");
+                _logger.LogInformation(WebConstants.ArticleDeleteSuccess);
                 return RedirectToAction(nameof(Index));
             }
 
-            _logger.LogError("Failed to delete article with ID {Id}", id);
+            _logger.LogError(WebConstants.ArticleDeleteError, id);
             return RedirectToAction(nameof(Index));
         }
 
@@ -212,8 +212,8 @@ namespace Blog.Controllers
             var result = await _articleService.VoteAsync(id, userId, isUpvote);
             if (!result)
             {
-                _logger.LogWarning("Vote failed for article {Id}", id);
-                return BadRequest("Failed to vote on the article");
+                _logger.LogWarning(WebConstants.LogVoteFailed, id);
+                return BadRequest(WebConstants.ArticleVoteError);
             }
 
             return RedirectToAction(nameof(Details), new { id });
@@ -233,8 +233,8 @@ namespace Blog.Controllers
             var result = await _articleService.RemoveVoteAsync(id, userId);
             if (!result)
             {
-                _logger.LogWarning("Remove vote failed for article {Id}", id);
-                return BadRequest("Failed to remove vote from the article");
+                _logger.LogWarning(WebConstants.LogRemoveVoteFailed, id);
+                return BadRequest(WebConstants.ArticleRemoveVoteError);
             }
 
             return RedirectToAction(nameof(Details), new { id });
@@ -246,7 +246,7 @@ namespace Blog.Controllers
             {
                 if (state.Value.Errors.Any())
                 {
-                    _logger.LogWarning("Validation error for {Property}: {Error}",
+                    _logger.LogWarning(WebConstants.LogValidationError,
                         state.Key, string.Join(", ", state.Value.Errors.Select(e => e.ErrorMessage)));
                 }
             }

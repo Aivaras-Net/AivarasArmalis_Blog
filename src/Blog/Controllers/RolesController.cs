@@ -76,17 +76,17 @@ namespace Blog.Controllers
             {
                 if (adminRoleChanged)
                 {
-                    TempData["Success"] = "You cannot remove your own Admin role. Other roles updated successfully.";
+                    TempData["Success"] = WebConstants.AdminRoleProtected;
                 }
                 else
                 {
-                    TempData["Success"] = "Roles updated successfully.";
+                    TempData["Success"] = WebConstants.RolesUpdated;
                 }
             }
             else
             {
-                TempData["Error"] = "Failed to update user roles.";
-                _logger.LogError("Failed to update roles for user {UserId}", userId);
+                TempData["Error"] = WebConstants.RolesUpdateFailed;
+                _logger.LogError(WebConstants.LogRolesUpdateFailed, userId);
             }
 
             return RedirectToAction(nameof(ManageUsers));

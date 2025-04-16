@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Mail;
+using Blog.Models;
 
 namespace Blog.Services
 {
@@ -25,7 +26,7 @@ namespace Blog.Services
                     return;
                 }
 
-                _logger.LogInformation($"Sending email to {email}");
+                _logger.LogInformation(WebConstants.LogSendingEmail, email);
 
                 using (var message = new MailMessage())
                 {
@@ -45,11 +46,11 @@ namespace Blog.Services
                     }
                 }
 
-                _logger.LogInformation($"Email sent to {email}");
+                _logger.LogInformation(WebConstants.LogEmailSent, email);
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Failed to send email: {ex.Message}");
+                _logger.LogError(WebConstants.LogEmailSendingFailed, ex.Message);
             }
         }
     }

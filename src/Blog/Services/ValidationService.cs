@@ -19,7 +19,7 @@ namespace Blog.Services
 
             if (string.IsNullOrWhiteSpace(article.Title))
             {
-                modelState.AddModelError("Title", "Title is required");
+                modelState.AddModelError("Title", WebConstants.TitleRequired);
                 return false;
             }
 
@@ -35,14 +35,14 @@ namespace Blog.Services
         {
             if (string.IsNullOrWhiteSpace(email))
             {
-                modelState.AddModelError("Email", "Email is required");
+                modelState.AddModelError("Email", WebConstants.EmailRequired);
                 return false;
             }
 
             // Email format validation
             if (!email.Contains('@') || !email.Contains('.'))
             {
-                modelState.AddModelError("Email", "Invalid email format");
+                modelState.AddModelError("Email", WebConstants.InvalidEmailFormat);
                 return false;
             }
 
@@ -53,13 +53,13 @@ namespace Blog.Services
         {
             if (string.IsNullOrWhiteSpace(firstName))
             {
-                modelState.AddModelError("FirstName", "First name is required");
+                modelState.AddModelError("FirstName", WebConstants.FirstNameRequired);
                 return false;
             }
 
             if (string.IsNullOrWhiteSpace(lastName))
             {
-                modelState.AddModelError("LastName", "Last name is required");
+                modelState.AddModelError("LastName", WebConstants.LastNameRequired);
                 return false;
             }
 
@@ -70,13 +70,13 @@ namespace Blog.Services
         {
             if (string.IsNullOrWhiteSpace(model.Password))
             {
-                modelState.AddModelError("Password", "Password is required");
+                modelState.AddModelError("Password", WebConstants.PasswordRequired);
                 return false;
             }
 
             if (model.Password != model.ConfirmPassword)
             {
-                modelState.AddModelError("ConfirmPassword", "The password and confirmation password do not match");
+                modelState.AddModelError("ConfirmPassword", WebConstants.PasswordsDoNotMatch);
                 return false;
             }
 

@@ -62,20 +62,20 @@ namespace Blog.Services
         {
             try
             {
-                _logger.LogInformation("Creating article: Title={Title}", article.Title);
+                _logger.LogInformation(WebConstants.LogCreatingArticle, article.Title);
 
                 article.AuthorId = userId;
                 article.PublishedDate = DateTime.Now;
 
                 _context.Add(article);
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("Article created successfully with ID: {ArticleId}", article.Id);
+                _logger.LogInformation(WebConstants.LogArticleCreated, article.Id);
 
                 return article;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating article");
+                _logger.LogError(ex, WebConstants.LogErrorCreatingArticle);
                 return null;
             }
         }
@@ -89,13 +89,13 @@ namespace Blog.Services
 
                 if (existingArticle == null)
                 {
-                    _logger.LogWarning("Article with ID {Id} not found", article.Id);
+                    _logger.LogWarning(WebConstants.LogArticleNotFound, article.Id);
                     return null;
                 }
 
                 if (!isAdmin && existingArticle.AuthorId != userId)
                 {
-                    _logger.LogWarning("User tried to edit an article they don't own");
+                    _logger.LogWarning(WebConstants.LogUnauthorizedEdit);
                     return null;
                 }
 
@@ -105,13 +105,13 @@ namespace Blog.Services
 
                 _context.Update(article);
                 await _context.SaveChangesAsync();
-                _logger.LogInformation("Article updated successfully");
+                _logger.LogInformation(WebConstants.LogArticleUpdated);
 
                 return article;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating article {Id}", article.Id);
+                _logger.LogError(ex, WebConstants.LogErrorUpdatingArticle, article.Id);
                 return null;
             }
         }
@@ -132,7 +132,7 @@ namespace Blog.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting article {Id}", id);
+                _logger.LogError(ex, WebConstants.LogErrorDeletingArticle, id);
                 return false;
             }
         }
@@ -178,7 +178,7 @@ namespace Blog.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error voting on article {Id}", articleId);
+                _logger.LogError(ex, WebConstants.LogErrorVoting, articleId);
                 return false;
             }
         }
@@ -201,7 +201,7 @@ namespace Blog.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error removing vote from article {Id}", articleId);
+                _logger.LogError(ex, WebConstants.LogErrorRemovingVote, articleId);
                 return false;
             }
         }
