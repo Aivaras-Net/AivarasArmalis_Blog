@@ -3,11 +3,13 @@ using Microsoft.EntityFrameworkCore;
 using Blog.Models;
 using Blog.Services;
 using Microsoft.Extensions.FileProviders;
+using System.Runtime.Versioning;
 
 namespace Blog
 {
     public class Program
     {
+        [SupportedOSPlatform("windows")]
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);

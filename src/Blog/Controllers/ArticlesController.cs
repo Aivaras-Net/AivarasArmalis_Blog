@@ -56,7 +56,7 @@ namespace Blog.Controllers
                 return NotFound();
             }
 
-            if (User.Identity.IsAuthenticated)
+            if (User.Identity != null && User.Identity.IsAuthenticated)
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 ViewBag.CurrentUserVote = article.Votes
@@ -99,7 +99,7 @@ namespace Blog.Controllers
                 {
                     var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                     _logger.LogInformation("Setting AuthorId to current user: {UserId}", userId);
-                    article.AuthorId = userId;
+                    article.AuthorId = userId ?? string.Empty;
                     article.PublishedDate = DateTime.Now;
 
                     _context.Add(article);
@@ -301,6 +301,11 @@ namespace Blog.Controllers
             }
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
             var existingVote = await _context.Votes
                 .FirstOrDefaultAsync(v => v.ArticleId == id && v.UserId == userId);
 
@@ -319,7 +324,7 @@ namespace Blog.Controllers
                 var vote = new Vote
                 {
                     ArticleId = id,
-                    UserId = userId,
+                    UserId = userId ?? string.Empty,
                     IsUpvote = isUpvote,
                     CreatedDate = DateTime.Now
                 };
@@ -337,6 +342,11 @@ namespace Blog.Controllers
         public async Task<IActionResult> RemoveVote(int id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (userId == null)
+            {
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
             var vote = await _context.Votes
                 .FirstOrDefaultAsync(v => v.ArticleId == id && v.UserId == userId);
 

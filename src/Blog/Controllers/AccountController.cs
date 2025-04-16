@@ -6,6 +6,7 @@ using Blog.Services;
 using System.Text.Encodings.Web;
 using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
+using System.Runtime.Versioning;
 
 namespace Blog.Controllers
 {
@@ -79,6 +80,7 @@ namespace Blog.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [SupportedOSPlatform("windows")]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (ModelState.IsValid)
@@ -124,6 +126,7 @@ namespace Blog.Controllers
 
         [HttpGet]
         [Authorize]
+        [SupportedOSPlatform("windows")]
         public async Task<IActionResult> Profile()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -134,7 +137,7 @@ namespace Blog.Controllers
 
             var model = new ProfileViewModel
             {
-                Email = user.Email,
+                Email = user.Email ?? string.Empty,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 ExistingProfilePicturePath = user.ProfilePicturePath,
@@ -166,6 +169,7 @@ namespace Blog.Controllers
         [HttpPost("Account/UpdateProfilePicture")]
         [Authorize]
         [ValidateAntiForgeryToken]
+        [SupportedOSPlatform("windows")]
         public async Task<IActionResult> UpdateProfilePicture(UpdateProfilePictureViewModel model)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -268,6 +272,7 @@ namespace Blog.Controllers
         [HttpPost("Account/UpdateName")]
         [Authorize]
         [ValidateAntiForgeryToken]
+        [SupportedOSPlatform("windows")]
         public async Task<IActionResult> UpdateName(UpdateNameViewModel model)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -379,7 +384,7 @@ namespace Blog.Controllers
             var replacements = new Dictionary<string, string>
             {
                 { "FirstName", user.FirstName ?? "User" },
-                { "ResetLink", HtmlEncoder.Default.Encode(callbackUrl) },
+                { "ResetLink", HtmlEncoder.Default.Encode(callbackUrl ?? string.Empty) },
                 { "CurrentYear", DateTime.Now.Year.ToString() }
             };
 
@@ -400,7 +405,7 @@ namespace Blog.Controllers
         }
 
         [HttpGet]
-        public IActionResult ResetPassword(string code = null, string userId = null)
+        public IActionResult ResetPassword(string? code = null, string? userId = null)
         {
             if (code == null || userId == null)
             {

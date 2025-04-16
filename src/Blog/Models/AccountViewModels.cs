@@ -59,7 +59,7 @@ namespace Blog.Models
         public string LastName { get; set; } = string.Empty;
 
         [Display(Name = "Profile Picture")]
-        public IFormFile ProfilePicture { get; set; }
+        public IFormFile? ProfilePicture { get; set; }
 
         public string? ExistingProfilePicturePath { get; set; }
 

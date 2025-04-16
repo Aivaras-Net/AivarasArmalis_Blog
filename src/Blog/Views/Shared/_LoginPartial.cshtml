@@ -9,7 +9,7 @@
         var user = await UserManager.GetUserAsync(User);
         var profilePicPath = !string.IsNullOrEmpty(user?.ProfilePicturePath)
         ? $"/{user.ProfilePicturePath.TrimStart('/')}"
-        : $"/{InitialsGenerator.GenerateInitialsImage(user.FirstName, user.LastName, user.Id).TrimStart('/')}";
+        : $"/{InitialsGenerator.GenerateInitialsImage(user?.FirstName ?? "", user?.LastName ?? "", user?.Id ?? "unknown")}";
 
         <li class="nav-item d-flex align-items-center">
             <img src="@profilePicPath" class="rounded-circle profile-picture-sm" alt="Profile" />

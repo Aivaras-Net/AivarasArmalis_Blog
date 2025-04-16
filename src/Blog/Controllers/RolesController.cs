@@ -38,7 +38,7 @@ namespace Blog.Controllers
                 var viewModel = new UserRolesViewModel
                 {
                     UserId = user.Id,
-                    Email = user.Email,
+                    Email = user.Email ?? string.Empty,
                     FullName = $"{user.FirstName} {user.LastName}",
                     Roles = userRoles.ToList()
                 };
@@ -69,8 +69,8 @@ namespace Blog.Controllers
                 var userRolesViewModel = new ManageUserRolesViewModel
                 {
                     RoleId = role.Id,
-                    RoleName = role.Name,
-                    Selected = userRoles.Contains(role.Name)
+                    RoleName = role.Name ?? string.Empty,
+                    Selected = userRoles.Contains(role.Name ?? string.Empty)
                 };
                 model.Add(userRolesViewModel);
             }

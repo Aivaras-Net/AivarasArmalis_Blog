@@ -1,5 +1,6 @@
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.Versioning;
 
 namespace Blog.Services
 {
@@ -13,6 +14,7 @@ namespace Blog.Services
             _environment = environment;
         }
 
+        [SupportedOSPlatform("windows")]
         public string GenerateInitialsImage(string firstName, string lastName, string userId)
         {
             string dataFolder = Path.Combine(_environment.ContentRootPath, "data");
@@ -78,6 +80,7 @@ namespace Blog.Services
             return initials;
         }
 
+        [SupportedOSPlatform("windows")]
         private Color GetRandomPastelColor()
         {
             int r = _random.Next(100, 200);

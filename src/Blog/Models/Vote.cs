@@ -8,11 +8,11 @@ namespace Blog.Models
 
         [Required]
         public int ArticleId { get; set; }
-        public Article Article { get; set; }
+        public Article? Article { get; set; }
 
         [Required]
-        public string UserId { get; set; }
-        public ApplicationUser User { get; set; }
+        public string UserId { get; set; } = string.Empty;
+        public ApplicationUser? User { get; set; }
 
         [Required]
         public bool IsUpvote { get; set; }

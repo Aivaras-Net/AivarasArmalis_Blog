@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Threading.Tasks;
 using Blog.Services;
+using System.Runtime.Versioning;
 
 namespace Blog.Models
 {
@@ -25,6 +26,7 @@ namespace Blog.Models
             }
         }
 
+        [SupportedOSPlatform("windows")]
         public static async Task SeedAdminUserAsync(IServiceProvider serviceProvider, string adminEmail, string adminPassword)
         {
             using var scope = serviceProvider.CreateScope();
