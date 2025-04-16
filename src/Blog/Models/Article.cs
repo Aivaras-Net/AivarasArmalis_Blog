@@ -1,5 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Blog.Models
 {
@@ -27,5 +29,15 @@ namespace Blog.Models
         public string AuthorId { get; set; } = string.Empty;
 
         public ApplicationUser? Author { get; set; }
+        public List<Vote> Votes { get; set; } = new List<Vote>();
+
+        [NotMapped]
+        public int VoteScore => Votes?.Sum(v => v.IsUpvote ? 1 : -1) ?? 0;
+
+        [NotMapped]
+        public int UpvoteCount => Votes?.Count(v => v.IsUpvote) ?? 0;
+
+        [NotMapped]
+        public int DownvoteCount => Votes?.Count(v => !v.IsUpvote) ?? 0;
     }
 }

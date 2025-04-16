@@ -7,6 +7,8 @@
     ViewData["Title"] = Model.Title;
     var userId = UserManager.GetUserId(User);
     var canEditArticle = User.IsInRole("Admin") || (User.IsInRole("Writer") && Model.AuthorId == userId);
+    var canVote = User.IsInRole("Admin") || User.IsInRole("Critic");
+    var userVote = ViewBag.CurrentUserVote as Vote;
 }
 
 <div class="container py-5">
@@ -25,21 +27,57 @@
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <h1 class="display-4 fw-bold mb-0">@Model.Title</h1>
 
-                        @if (canEditArticle)
-                        {
-                            <div class="dropdown">
-                                <button class="btn btn-outline-secondary dropdown-toggle" type="button"
-                                    id="articleActionDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="bi bi-gear"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="articleActionDropdown">
-                                    <li><a class="dropdown-item" asp-action="Edit" asp-route-id="@Model.Id"><i
-                                                class="bi bi-pencil me-2"></i>Edit Article</a></li>
-                                    <li><a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@Model.Id"><i
-                                                class="bi bi-trash me-2"></i>Delete Article</a></li>
-                                </ul>
+                        <div class="d-flex align-items-center gap-2">
+                            <!-- Voting Controls -->
+                            <div class="text-center me-2">
+                                <div class="d-flex align-items-center">
+                                    @if (canVote)
+                                    {
+                                        <form asp-action="Vote" asp-route-id="@Model.Id" asp-route-isUpvote="true" method="post" class="me-2">
+                                            <button type="submit" class="btn @(userVote?.IsUpvote == true ? "btn-success" : "btn-outline-success") btn-sm">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    
+                                    <span class="badge bg-@(Model.VoteScore > 0 ? "success" : Model.VoteScore < 0 ? "danger" : "secondary") rounded-pill fs-6">
+                                        @Model.VoteScore
+                                    </span>
+                                    
+                                    @if (canVote)
+                                    {
+                                        <form asp-action="Vote" asp-route-id="@Model.Id" asp-route-isUpvote="false" method="post" class="ms-2">
+                                            <button type="submit" class="btn @(userVote?.IsUpvote == false ? "btn-danger" : "btn-outline-danger") btn-sm">
+                                                <i class="bi bi-dash-lg"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                                
+                                @if (canVote && userVote != null)
+                                {
+                                    <form asp-action="RemoveVote" asp-route-id="@Model.Id" method="post" class="mt-1">
+                                        <button type="submit" class="btn btn-sm btn-link p-0">Clear vote</button>
+                                    </form>
+                                }
                             </div>
-                        }
+
+                            @if (canEditArticle)
+                            {
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                                        id="articleActionDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-gear"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="articleActionDropdown">
+                                        <li><a class="dropdown-item" asp-action="Edit" asp-route-id="@Model.Id"><i
+                                                    class="bi bi-pencil me-2"></i>Edit Article</a></li>
+                                        <li><a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@Model.Id"><i
+                                                    class="bi bi-trash me-2"></i>Delete Article</a></li>
+                                    </ul>
+                                </div>
+                            }
+                        </div>
                     </div>
 
                     <div class="d-flex align-items-center text-muted mb-4">

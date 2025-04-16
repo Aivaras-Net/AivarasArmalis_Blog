@@ -13,7 +13,7 @@ namespace Blog.Models
             using var scope = serviceProvider.CreateScope();
             var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
 
-            string[] roleNames = { "Admin", "Writer", "User" };
+            string[] roleNames = { "Admin", "Writer", "Critic" };
 
             foreach (var roleName in roleNames)
             {

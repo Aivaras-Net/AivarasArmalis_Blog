@@ -8,11 +8,12 @@
     ViewData["Title"] = "Articles";
     var userId = UserManager.GetUserId(User);
     var isWriterOrAdmin = User.IsInRole("Writer") || User.IsInRole("Admin");
+    var isCritic = User.IsInRole("Critic");
 }
 
 <div class="container py-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="display-4">Latest Articles</h1>
+        <h1 class="display-4">Articles Ranking</h1>
         @if (isWriterOrAdmin)
         {
             <a asp-action="Create" class="btn btn-primary">
@@ -38,7 +39,21 @@
                         </div>
                     }
                     <div class="card-body">
-                        <h5 class="card-title">@article.Title</h5>
+                        <!-- Vote Score Badge -->
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h5 class="card-title mb-0">@article.Title</h5>
+                            <span
+                                class="badge bg-@(article.VoteScore > 0 ? "success" : article.VoteScore < 0 ? "danger" : "secondary") rounded-pill">
+                                @article.VoteScore
+                            </span>
+                        </div>
+
+                        <!-- Vote Count Display -->
+                        <div class="mb-3 small text-muted">
+                            <i class="bi bi-plus-lg text-success me-1"></i> @article.UpvoteCount
+                            <i class="bi bi-dash-lg text-danger mx-1"></i> @article.DownvoteCount
+                        </div>
+
                         @if (!string.IsNullOrEmpty(article.Summary))
                         {
                             <p class="card-text text-muted">@article.Summary</p>

@@ -28,8 +28,13 @@ namespace Blog.Controllers
         {
             var articles = await _context.Articles
                 .Include(a => a.Author)
-                .OrderByDescending(a => a.PublishedDate)
+                .Include(a => a.Votes)
                 .ToListAsync();
+
+            articles = articles
+                .OrderByDescending(a => a.VoteScore)
+                .ThenByDescending(a => a.PublishedDate)
+                .ToList();
 
             return View(articles);
         }
@@ -43,11 +48,19 @@ namespace Blog.Controllers
 
             var article = await _context.Articles
                 .Include(a => a.Author)
+                .Include(a => a.Votes)
                 .FirstOrDefaultAsync(m => m.Id == id);
 
             if (article == null)
             {
                 return NotFound();
+            }
+
+            if (User.Identity.IsAuthenticated)
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                ViewBag.CurrentUserVote = article.Votes
+                    .FirstOrDefault(v => v.UserId == userId);
             }
 
             return View(article);
@@ -271,6 +284,69 @@ namespace Blog.Controllers
         private bool ArticleExists(int id)
         {
             return _context.Articles.Any(e => e.Id == id);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Critic")]
+        public async Task<IActionResult> Vote(int id, bool isUpvote)
+        {
+            var article = await _context.Articles
+                .Include(a => a.Votes)
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (article == null)
+            {
+                return NotFound();
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var existingVote = await _context.Votes
+                .FirstOrDefaultAsync(v => v.ArticleId == id && v.UserId == userId);
+
+            if (existingVote != null)
+            {
+                if (existingVote.IsUpvote != isUpvote)
+                {
+                    existingVote.IsUpvote = isUpvote;
+                    existingVote.CreatedDate = DateTime.Now;
+                    _context.Update(existingVote);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            else
+            {
+                var vote = new Vote
+                {
+                    ArticleId = id,
+                    UserId = userId,
+                    IsUpvote = isUpvote,
+                    CreatedDate = DateTime.Now
+                };
+
+                _context.Votes.Add(vote);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Critic")]
+        public async Task<IActionResult> RemoveVote(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var vote = await _context.Votes
+                .FirstOrDefaultAsync(v => v.ArticleId == id && v.UserId == userId);
+
+            if (vote != null)
+            {
+                _context.Votes.Remove(vote);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Details), new { id });
         }
     }
 }

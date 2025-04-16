@@ -13,7 +13,13 @@
 
         <li class="nav-item d-flex align-items-center">
             <img src="@profilePicPath" class="rounded-circle profile-picture-sm" alt="Profile" />
-            <span class="nav-link text-dark p-0 me-2">Hello @(user?.FirstName ?? "User")!</span>
+            <span class="nav-link text-dark p-0 me-2">
+                Hello @(user?.FirstName ?? "User")!
+                @if (User.IsInRole("Critic"))
+                {
+                    <span class="badge bg-primary ms-1">Critic</span>
+                }
+            </span>
         </li>
         <li class="nav-item">
             <a class="nav-link text-dark" asp-controller="Account" asp-action="Profile">Profile</a>
