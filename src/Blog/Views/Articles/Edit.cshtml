@@ -26,21 +26,23 @@
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
                         <div class="mb-3">
-                            <label asp-for="Title" class="form-label">Title</label>
+                            <label asp-for="Title" class="form-label">Title <span class="text-danger">*</span></label>
                             <input asp-for="Title" class="form-control" required />
                             <span asp-validation-for="Title" class="text-danger"></span>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Summary" class="form-label">Summary</label>
-                            <textarea asp-for="Summary" class="form-control" rows="3" required></textarea>
+                            <label asp-for="Summary" class="form-label">Summary <small
+                                    class="text-muted">(optional)</small></label>
+                            <textarea asp-for="Summary" class="form-control" rows="3"></textarea>
                             <span asp-validation-for="Summary" class="text-danger"></span>
                             <div class="form-text">A brief summary of your article. This will appear in the article
                                 list.</div>
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="ImageUrl" class="form-label">Featured Image URL</label>
+                            <label asp-for="ImageUrl" class="form-label">Featured Image URL <small
+                                    class="text-muted">(optional)</small></label>
                             <input asp-for="ImageUrl" class="form-control"
                                 placeholder="https://example.com/image.jpg" />
                             <span asp-validation-for="ImageUrl" class="text-danger"></span>
@@ -49,8 +51,9 @@
                         </div>
 
                         <div class="mb-4">
-                            <label asp-for="Content" class="form-label">Content</label>
-                            <textarea asp-for="Content" id="summernote" class="form-control" required></textarea>
+                            <label asp-for="Content" class="form-label">Content <small
+                                    class="text-muted">(optional)</small></label>
+                            <textarea asp-for="Content" id="summernote" class="form-control"></textarea>
                             <span asp-validation-for="Content" class="text-danger"></span>
                         </div>
 
@@ -89,25 +92,18 @@
                     ['insert', ['link', 'picture', 'table']],
                     ['heading', ['h1', 'h2', 'h3']],
                     ['view', ['fullscreen', 'codeview']]
-                ],
-                callbacks: {
-                    onChange: function (contents) {
-                        // This ensures form validation happens
-                        var textContent = $(contents).text().trim();
-                        if (textContent.length > 0) {
-                            $('#summernote').removeClass('is-invalid');
-                        }
-                    }
-                }
+                ]
             });
 
-            // Validate form on submit
-            $('#articleForm').on('submit', function (e) {
-                var summernoteContent = $('#summernote').summernote('isEmpty');
-                if (summernoteContent) {
-                    e.preventDefault();
-                    $('#summernote').addClass('is-invalid');
-                    return false;
+            $('#articleForm').submit(function () {
+                if ($('#Summary').val() === '') {
+                    $('#Summary').removeAttr('name');
+                }
+                if ($('#ImageUrl').val() === '') {
+                    $('#ImageUrl').removeAttr('name');
+                }
+                if ($('#summernote').summernote('isEmpty')) {
+                    $('#Content').removeAttr('name');
                 }
                 return true;
             });

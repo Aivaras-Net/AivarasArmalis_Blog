@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
+using Microsoft.Extensions.Logging;
 
 namespace Blog.Controllers
 {
@@ -63,17 +64,21 @@ namespace Blog.Controllers
         [Authorize(Roles = "Admin,Writer")]
         public async Task<IActionResult> Create(Article article)
         {
-            _logger.LogInformation("Create POST called with article: Title={Title}, Summary={Summary}, ContentLength={ContentLength}",
-                article.Title, article.Summary, article.Content?.Length ?? 0);
-
-            if (string.IsNullOrWhiteSpace(article.Content))
-            {
-                ModelState.AddModelError("Content", "Article content is required.");
-                _logger.LogWarning("Article content is empty or whitespace");
-                return View(article);
-            }
+            _logger.LogInformation("Create POST called with article: Title={Title}, SummaryLength={SummaryLength}, ContentLength={ContentLength}",
+                article.Title, article.Summary?.Length ?? 0, article.Content?.Length ?? 0);
 
             ModelState.Remove("AuthorId");
+
+            if (string.IsNullOrWhiteSpace(article.Title))
+            {
+                ModelState.AddModelError("Title", "Title is required");
+            }
+            else
+            {
+                ModelState.Remove("Summary");
+                ModelState.Remove("Content");
+                ModelState.Remove("ImageUrl");
+            }
 
             if (ModelState.IsValid)
             {
@@ -136,20 +141,13 @@ namespace Blog.Controllers
         [Authorize(Roles = "Admin,Writer")]
         public async Task<IActionResult> Edit(int id, Article article)
         {
-            _logger.LogInformation("Edit POST called with article ID: {Id}, ContentLength: {ContentLength}",
-                id, article.Content?.Length ?? 0);
+            _logger.LogInformation("Edit POST called with article ID: {Id}, SummaryLength: {SummaryLength}, ContentLength: {ContentLength}",
+                id, article.Summary?.Length ?? 0, article.Content?.Length ?? 0);
 
             if (id != article.Id)
             {
                 _logger.LogWarning("ID mismatch: {RouteId} vs {ModelId}", id, article.Id);
                 return NotFound();
-            }
-
-            if (string.IsNullOrWhiteSpace(article.Content))
-            {
-                ModelState.AddModelError("Content", "Article content is required.");
-                _logger.LogWarning("Article content is empty or whitespace");
-                return View(article);
             }
 
             var existingArticle = await _context.Articles.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
@@ -166,6 +164,17 @@ namespace Blog.Controllers
             }
 
             ModelState.Remove("AuthorId");
+
+            if (string.IsNullOrWhiteSpace(article.Title))
+            {
+                ModelState.AddModelError("Title", "Title is required");
+            }
+            else
+            {
+                ModelState.Remove("Summary");
+                ModelState.Remove("Content");
+                ModelState.Remove("ImageUrl");
+            }
 
             if (ModelState.IsValid)
             {

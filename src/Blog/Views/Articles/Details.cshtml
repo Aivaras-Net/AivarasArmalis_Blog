@@ -70,6 +70,13 @@
                             </div>
                         </div>
                     </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Summary))
+                    {
+                        <div class="lead text-muted mb-4 fst-italic">
+                            @Model.Summary
+                        </div>
+                    }
                 </header>
 
                 @if (!string.IsNullOrEmpty(Model.ImageUrl))
@@ -84,9 +91,19 @@
                     </figure>
                 }
 
-                <div class="article-content lead mb-5">
-                    @Html.Raw(Model.Content)
-                </div>
+                @if (!string.IsNullOrEmpty(Model.Content))
+                {
+                    <div class="article-content lead mb-5">
+                        @Html.Raw(Model.Content)
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-light text-center mb-5">
+                        <i class="bi bi-file-earmark-text display-4 d-block mb-3 text-muted"></i>
+                        <p>This article has no content.</p>
+                    </div>
+                }
 
                 <div class="d-flex justify-content-between border-top pt-4">
                     <a asp-action="Index" class="btn btn-outline-secondary">
@@ -112,7 +129,7 @@
             if (navigator.share) {
                 navigator.share({
                     title: '@Model.Title',
-                    text: '@Model.Summary',
+                    text: '@(Model.Summary ?? "Check out this article!")',
                     url: window.location.href
                 })
                     .catch(console.error);
