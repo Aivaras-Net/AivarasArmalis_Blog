@@ -1,0 +1,15 @@
+@model IEnumerable<Blog.Models.Comment>
+
+@if (Model != null && Model.Any())
+{
+    <div class="replies ms-3 mt-2">
+        @foreach (var reply in Model)
+        {
+            <partial name="_CommentPartial" model="reply" />
+        }
+    </div>
+}
+else
+{
+    <div class="text-muted small ms-3 mt-2">No replies yet</div>
+}

@@ -31,6 +31,8 @@ namespace Blog.Models
         public ApplicationUser? Author { get; set; }
         public List<Vote> Votes { get; set; } = new List<Vote>();
 
+        public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
+
         [NotMapped]
         public int VoteScore => Votes?.Sum(v => v.IsUpvote ? 1 : -1) ?? 0;
 

@@ -26,11 +26,13 @@ namespace Blog
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
             builder.Services.AddScoped<IValidationService, ValidationService>();
+            builder.Services.AddScoped<ICommentService, CommentService>();
 
             builder.Services.AddScoped<ILogger<ArticlesController>, Logger<ArticlesController>>();
             builder.Services.AddScoped<ILogger<AccountController>, Logger<AccountController>>();
             builder.Services.AddScoped<ILogger<RolesController>, Logger<RolesController>>();
             builder.Services.AddScoped<ILogger<HomeController>, Logger<HomeController>>();
+            builder.Services.AddScoped<ILogger<CommentsController>, Logger<CommentsController>>();
 
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {

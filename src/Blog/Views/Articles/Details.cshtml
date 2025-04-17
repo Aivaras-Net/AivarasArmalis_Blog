@@ -2,6 +2,7 @@
 @using Microsoft.AspNetCore.Identity
 @using Blog.Models
 @inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
 
 @{
     ViewData["Title"] = Model.Title;
@@ -157,6 +158,42 @@
                     </div>
                 </div>
             </article>
+            
+             <div class="comments-section mt-5 pt-4 border-top">
+                <h3 class="mb-4">Comments</h3>
+                
+                @if (SignInManager.IsSignedIn(User) && (User.IsInRole("Admin") || User.IsInRole("Writer") || User.IsInRole("Commentator")))
+                {
+                    <div class="new-comment mb-4">
+                        <form asp-controller="Comments" asp-action="Create" method="post" data-ajax="true" 
+                              data-ajax-method="post" data-ajax-update="#comments-container">
+                            <input type="hidden" name="articleId" value="@Model.Id" />
+                            <div class="mb-3">
+                                <textarea class="form-control" name="content" rows="3" 
+                                          placeholder="Share your thoughts..." required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Post Comment</button>
+                        </form>
+                    </div>
+                }
+                else if (SignInManager.IsSignedIn(User))
+                {
+                    <div class="alert alert-info mb-4">
+                        You need the Commentator role to comment on articles. 
+                        Please contact an administrator to request this role.
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info mb-4">
+                        <a asp-controller="Account" asp-action="Login" class="alert-link">Sign in</a> to leave a comment.
+                    </div>
+                }
+                
+                <div id="comments-container">
+                    @await Component.InvokeAsync("ArticleComments", new { articleId = Model.Id })
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -175,6 +212,51 @@
                 // Fallback for browsers that don't support the Web Share API
                 alert('Copy this link to share: ' + window.location.href);
             }
+        }
+        
+        $(document).ready(function() {
+            // Edit comment
+            $(document).on('click', '.edit-button', function() {
+                var commentId = $(this).data('comment-id');
+                $('#comment-content-' + commentId).hide();
+                $('#edit-form-' + commentId).removeClass('d-none');
+            });
+            
+            $(document).on('click', '.cancel-edit', function() {
+                var commentId = $(this).data('comment-id');
+                $('#edit-form-' + commentId).addClass('d-none');
+                $('#comment-content-' + commentId).show();
+            });
+            
+            $(document).on('click', '.reply-button', function() {
+                var commentId = $(this).data('comment-id');
+                $('#reply-form-' + commentId).removeClass('d-none');
+            });
+            
+            $(document).on('click', '.cancel-reply', function() {
+                var commentId = $(this).data('comment-id');
+                $('#reply-form-' + commentId).addClass('d-none');
+            });
+            
+            $(document).on('click', '.load-replies-button', function() {
+                var commentId = $(this).data('comment-id');
+                var $button = $(this);
+                
+                $.ajax({
+                    url: '@Url.Action("GetReplies", "Comments")',
+                    data: { commentId: commentId },
+                    type: 'GET',
+                    success: function(result) {
+                        $('#replies-' + commentId).html(result);
+                    }
+                });
+            });
+        });
+        
+        function removeComment(commentId) {
+            $('#comment-' + commentId).fadeOut(function() {
+                $(this).remove();
+            });
         }
     </script>
 }
