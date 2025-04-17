@@ -2,7 +2,7 @@
 @inject Blog.Services.InitialsProfileImageGenerator InitialsGenerator
 @{
     ViewData["Title"] = "Profile";
-    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "unknown";
     var profilePicPath = !string.IsNullOrEmpty(Model.ExistingProfilePicturePath)
     ? $"/{Model.ExistingProfilePicturePath.TrimStart('/')}"
     : $"/{InitialsGenerator.GenerateInitialsImage(Model.FirstName ?? "", Model.LastName ?? "", userId).TrimStart('/')}";

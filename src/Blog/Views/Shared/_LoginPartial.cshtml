@@ -9,15 +9,27 @@
         var user = await UserManager.GetUserAsync(User);
         var profilePicPath = !string.IsNullOrEmpty(user?.ProfilePicturePath)
         ? $"/{user.ProfilePicturePath.TrimStart('/')}"
-        : $"/{InitialsGenerator.GenerateInitialsImage(user.FirstName, user.LastName, user.Id).TrimStart('/')}";
+        : $"/{InitialsGenerator.GenerateInitialsImage(user?.FirstName ?? "", user?.LastName ?? "", user?.Id ?? "unknown")}";
 
         <li class="nav-item d-flex align-items-center">
             <img src="@profilePicPath" class="rounded-circle profile-picture-sm" alt="Profile" />
-            <span class="nav-link text-dark p-0 me-2">Hello @(user?.FirstName ?? "User")!</span>
+            <span class="nav-link text-dark p-0 me-2">
+                Hello @(user?.FirstName ?? "User")!
+                @if (User.IsInRole("Critic"))
+                {
+                    <span class="badge bg-primary ms-1">Critic</span>
+                }
+            </span>
         </li>
         <li class="nav-item">
             <a class="nav-link text-dark" asp-controller="Account" asp-action="Profile">Profile</a>
         </li>
+        @if (User.IsInRole("Admin"))
+        {
+            <li class="nav-item">
+                <a class="nav-link text-dark" asp-controller="Roles" asp-action="Index">Role Management</a>
+            </li>
+        }
         <li class="nav-item">
             <form class="form-inline" asp-controller="Account" asp-action="Logout" method="post">
                 <button type="submit" class="nav-link btn btn-link text-dark">Logout</button>

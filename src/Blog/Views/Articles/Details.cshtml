@@ -1,0 +1,180 @@
+@model Blog.Models.Article
+@using Microsoft.AspNetCore.Identity
+@using Blog.Models
+@inject UserManager<ApplicationUser> UserManager
+
+@{
+    ViewData["Title"] = Model.Title;
+    var userId = UserManager.GetUserId(User);
+    var canEditArticle = User.IsInRole("Admin") || (User.IsInRole("Writer") && Model.AuthorId == userId);
+    var canVote = User.IsInRole("Admin") || User.IsInRole("Critic");
+    var userVote = ViewBag.CurrentUserVote as Vote;
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+                    <li class="breadcrumb-item"><a asp-controller="Articles" asp-action="Index">Articles</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">@Model.Title</li>
+                </ol>
+            </nav>
+
+            <article>
+                <header class="mb-4">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h1 class="display-4 fw-bold mb-0">@Model.Title</h1>
+
+                        <div class="d-flex align-items-center gap-2">
+                            <!-- Voting Controls -->
+                            <div class="text-center me-2">
+                                <div class="d-flex align-items-center">
+                                    @if (canVote)
+                                    {
+                                        <form asp-action="Vote" asp-route-id="@Model.Id" asp-route-isUpvote="true" method="post" class="me-2">
+                                            <button type="submit" class="btn @(userVote?.IsUpvote == true ? "btn-success" : "btn-outline-success") btn-sm">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                    
+                                    <span class="badge bg-@(Model.VoteScore > 0 ? "success" : Model.VoteScore < 0 ? "danger" : "secondary") rounded-pill fs-6">
+                                        @Model.VoteScore
+                                    </span>
+                                    
+                                    @if (canVote)
+                                    {
+                                        <form asp-action="Vote" asp-route-id="@Model.Id" asp-route-isUpvote="false" method="post" class="ms-2">
+                                            <button type="submit" class="btn @(userVote?.IsUpvote == false ? "btn-danger" : "btn-outline-danger") btn-sm">
+                                                <i class="bi bi-dash-lg"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                                
+                                @if (canVote && userVote != null)
+                                {
+                                    <form asp-action="RemoveVote" asp-route-id="@Model.Id" method="post" class="mt-1">
+                                        <button type="submit" class="btn btn-sm btn-link p-0">Clear vote</button>
+                                    </form>
+                                }
+                            </div>
+
+                            @if (canEditArticle)
+                            {
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                                        id="articleActionDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-gear"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="articleActionDropdown">
+                                        <li><a class="dropdown-item" asp-action="Edit" asp-route-id="@Model.Id"><i
+                                                    class="bi bi-pencil me-2"></i>Edit Article</a></li>
+                                        <li><a class="dropdown-item text-danger" asp-action="Delete" asp-route-id="@Model.Id"><i
+                                                    class="bi bi-trash me-2"></i>Delete Article</a></li>
+                                    </ul>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center text-muted mb-4">
+                        @if (Model.Author != null && !string.IsNullOrEmpty(Model.Author.ProfilePicturePath))
+                        {
+                            <img src="/@Model.Author.ProfilePicturePath" alt="@Model.Author.FirstName @Model.Author.LastName"
+                                class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                        }
+                        else
+                        {
+                            <div class="bg-light rounded-circle me-2 d-flex align-items-center justify-content-center"
+                                style="width: 40px; height: 40px;">
+                                <i class="bi bi-person"></i>
+                            </div>
+                        }
+                        <div>
+                            @if (Model.Author != null)
+                            {
+                                <span class="fw-medium">@Model.Author.FirstName @Model.Author.LastName</span>
+                            }
+                            <div class="small">
+                                Published on @Model.PublishedDate.ToString("MMMM d, yyyy")
+                                @if (Model.LastUpdated.HasValue)
+                                {
+                                    <span class="mx-1">•</span>
+                                    <span>Updated on @Model.LastUpdated.Value.ToString("MMMM d, yyyy")</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Summary))
+                    {
+                        <div class="lead text-muted mb-4 fst-italic">
+                            @Model.Summary
+                        </div>
+                    }
+                </header>
+
+                @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                {
+                    <figure class="figure mb-5 w-100">
+                        <img src="@Model.ImageUrl" class="figure-img img-fluid rounded shadow" alt="@Model.Title"
+                            style="width: 100%; max-height: 500px; object-fit: cover;">
+                        @if (!string.IsNullOrEmpty(Model.Title))
+                        {
+                            <figcaption class="figure-caption text-end">@Model.Title</figcaption>
+                        }
+                    </figure>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.Content))
+                {
+                    <div class="article-content lead mb-5">
+                        @Html.Raw(Model.Content)
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-light text-center mb-5">
+                        <i class="bi bi-file-earmark-text display-4 d-block mb-3 text-muted"></i>
+                        <p>This article has no content.</p>
+                    </div>
+                }
+
+                <div class="d-flex justify-content-between border-top pt-4">
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Articles
+                    </a>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary" onclick="window.print()">
+                            <i class="bi bi-printer me-1"></i> Print
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="shareArticle()">
+                            <i class="bi bi-share me-1"></i> Share
+                        </button>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function shareArticle() {
+            if (navigator.share) {
+                navigator.share({
+                    title: '@Model.Title',
+                    text: '@(Model.Summary ?? "Check out this article!")',
+                    url: window.location.href
+                })
+                    .catch(console.error);
+            } else {
+                // Fallback for browsers that don't support the Web Share API
+                alert('Copy this link to share: ' + window.location.href);
+            }
+        }
+    </script>
+}

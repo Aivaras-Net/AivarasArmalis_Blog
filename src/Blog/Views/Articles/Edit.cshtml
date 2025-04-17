@@ -1,0 +1,112 @@
+@model Blog.Models.Article
+
+@{
+    ViewData["Title"] = "Edit Article";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+                    <li class="breadcrumb-item"><a asp-controller="Articles" asp-action="Index">Articles</a></li>
+                    <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@Model.Id">@Model.Title</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Edit</li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h1 class="h3 mb-0">Edit Article</h1>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post" id="articleForm">
+                        <input type="hidden" asp-for="Id" />
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control" required />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Summary" class="form-label">Summary <small
+                                    class="text-muted">(optional)</small></label>
+                            <textarea asp-for="Summary" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Summary" class="text-danger"></span>
+                            <div class="form-text">A brief summary of your article. This will appear in the article
+                                list.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ImageUrl" class="form-label">Featured Image URL <small
+                                    class="text-muted">(optional)</small></label>
+                            <input asp-for="ImageUrl" class="form-control"
+                                placeholder="https://example.com/image.jpg" />
+                            <span asp-validation-for="ImageUrl" class="text-danger"></span>
+                            <div class="form-text">URL to the featured image for your article. Leave empty for no image.
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Content" class="form-label">Content <small
+                                    class="text-muted">(optional)</small></label>
+                            <textarea asp-for="Content" id="summernote" class="form-control"></textarea>
+                            <span asp-validation-for="Content" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <a asp-action="Index" class="btn btn-outline-secondary me-2">Back to List</a>
+                                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-primary">View
+                                    Article</a>
+                            </div>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <!-- Include Summernote CSS & JS -->
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-bs5.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.20/dist/summernote-bs5.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            $('#summernote').summernote({
+                height: 500,
+                toolbar: [
+                    ['style', ['style']],
+                    ['font', ['bold', 'italic', 'underline', 'clear']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['insert', ['link', 'picture', 'table']],
+                    ['heading', ['h1', 'h2', 'h3']],
+                    ['view', ['fullscreen', 'codeview']]
+                ]
+            });
+
+            $('#articleForm').submit(function () {
+                if ($('#Summary').val() === '') {
+                    $('#Summary').removeAttr('name');
+                }
+                if ($('#ImageUrl').val() === '') {
+                    $('#ImageUrl').removeAttr('name');
+                }
+                if ($('#summernote').summernote('isEmpty')) {
+                    $('#Content').removeAttr('name');
+                }
+                return true;
+            });
+        });
+    </script>
+}

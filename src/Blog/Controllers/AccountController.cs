@@ -6,32 +6,27 @@ using Blog.Services;
 using System.Text.Encodings.Web;
 using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
+using System.Runtime.Versioning;
 
 namespace Blog.Controllers
 {
     public class AccountController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly FileService _fileService;
-        private readonly InitialsProfileImageGenerator _initialsGenerator;
-        private readonly IEmailSender _emailSender;
-        private readonly TemplateHelper _templateHelper;
+        private readonly IAccountService _accountService;
+        private readonly IValidationService _validationService;
+        private readonly ILogger<AccountController> _logger;
 
         public AccountController(
             UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager,
-            FileService fileService,
-            InitialsProfileImageGenerator initialsGenerator,
-            IEmailSender emailSender,
-            TemplateHelper templateHelper)
+            IAccountService accountService,
+            IValidationService validationService,
+            ILogger<AccountController> logger)
         {
             _userManager = userManager;
-            _signInManager = signInManager;
-            _fileService = fileService;
-            _initialsGenerator = initialsGenerator;
-            _emailSender = emailSender;
-            _templateHelper = templateHelper;
+            _accountService = accountService;
+            _validationService = validationService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -46,7 +41,7 @@ namespace Blog.Controllers
         {
             if (ModelState.IsValid)
             {
-                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: true);
+                var result = await _accountService.LoginAsync(model.Email, model.Password, model.RememberMe);
 
                 if (result.Succeeded)
                 {
@@ -63,7 +58,7 @@ namespace Blog.Controllers
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError(string.Empty, WebConstants.InvalidLoginAttempt);
                     return View(model);
                 }
             }
@@ -79,27 +74,15 @@ namespace Blog.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [SupportedOSPlatform("windows")]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (ModelState.IsValid)
             {
-                var user = new ApplicationUser
-                {
-                    UserName = model.Email,
-                    Email = model.Email,
-                    FirstName = model.FirstName,
-                    LastName = model.LastName
-                };
-
-                var result = await _userManager.CreateAsync(user, model.Password);
+                var (result, user) = await _accountService.RegisterUserAsync(model);
 
                 if (result.Succeeded)
                 {
-                    string profilePath = _initialsGenerator.GenerateInitialsImage(user.FirstName, user.LastName, user.Id);
-                    user.ProfilePicturePath = profilePath;
-                    await _userManager.UpdateAsync(user);
-
-                    await _signInManager.SignInAsync(user, isPersistent: false);
                     return RedirectToAction("Index", "Home");
                 }
 
@@ -116,23 +99,24 @@ namespace Blog.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            await _signInManager.SignOutAsync();
+            await _accountService.LogoutAsync();
             return RedirectToAction("Index", "Home");
         }
 
         [HttpGet]
         [Authorize]
+        [SupportedOSPlatform("windows")]
         public async Task<IActionResult> Profile()
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound(string.Format(WebConstants.UserNotFound, _userManager.GetUserId(User)));
             }
 
             var model = new ProfileViewModel
             {
-                Email = user.Email,
+                Email = user.Email ?? string.Empty,
                 FirstName = user.FirstName,
                 LastName = user.LastName,
                 ExistingProfilePicturePath = user.ProfilePicturePath,
@@ -164,51 +148,25 @@ namespace Blog.Controllers
         [HttpPost("Account/UpdateProfilePicture")]
         [Authorize]
         [ValidateAntiForgeryToken]
+        [SupportedOSPlatform("windows")]
         public async Task<IActionResult> UpdateProfilePicture(UpdateProfilePictureViewModel model)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound(string.Format(WebConstants.UserNotFound, _userManager.GetUserId(User)));
             }
 
-            bool updateRequired = false;
-            string? oldProfilePicturePath = user.ProfilePicturePath;
-            bool hadCustomPicture = !string.IsNullOrEmpty(oldProfilePicturePath) && !oldProfilePicturePath.Contains("data/UserImages/initials/");
+            var result = await _accountService.UpdateProfilePictureAsync(user, model);
 
-            if (model.RemoveProfilePicture && hadCustomPicture)
+            if (result)
             {
-                _fileService.DeleteProfilePicture(oldProfilePicturePath!);
-                user.ProfilePicturePath = _initialsGenerator.GenerateInitialsImage(user.FirstName, user.LastName, user.Id);
-                updateRequired = true;
-            }
-            else if (model.ProfilePicture != null && model.ProfilePicture.Length > 0)
-            {
-                if (hadCustomPicture)
-                {
-                    _fileService.DeleteProfilePicture(oldProfilePicturePath!);
-                }
-
-                user.ProfilePicturePath = await _fileService.SaveProfilePictureAsync(model.ProfilePicture, user.Id);
-                updateRequired = true;
-            }
-
-            if (updateRequired)
-            {
-                var updateResult = await _userManager.UpdateAsync(user);
-                if (!updateResult.Succeeded)
-                {
-                    TempData["StatusMessage"] = "Error updating profile picture.";
-                }
-                else
-                {
-                    await _signInManager.RefreshSignInAsync(user);
-                    TempData["StatusMessage"] = "Profile picture updated successfully.";
-                }
+                TempData["StatusMessage"] = WebConstants.ProfilePictureUpdated;
             }
             else
             {
-                TempData["StatusMessage"] = "No changes detected for profile picture.";
+                _logger.LogError(WebConstants.LogProfilePictureUpdateError, user.Id);
+                TempData["StatusMessage"] = WebConstants.ProfilePictureUpdateError;
             }
 
             return RedirectToAction(nameof(Profile));
@@ -222,42 +180,25 @@ namespace Blog.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound(string.Format(WebConstants.UserNotFound, _userManager.GetUserId(User)));
             }
 
-            if (!ModelState.IsValid)
+            if (!_validationService.ValidateUserEmailUpdate(model.Email, ModelState))
             {
-                TempData["EmailUpdateErrors"] = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                TempData["StatusMessage"] = "Email update failed. Please check the errors.";
+                TempData["EmailUpdateErrors"] = ModelState["Email"]?.Errors.Select(e => e.ErrorMessage).ToList();
                 return RedirectToAction(nameof(Profile));
             }
 
-            var currentEmail = await _userManager.GetEmailAsync(user);
-            if (model.Email != currentEmail)
+            var result = await _accountService.UpdateEmailAsync(user, model.Email);
+
+            if (result.Succeeded)
             {
-                if (user.UserName == currentEmail)
-                {
-                    var setUserNameResult = await _userManager.SetUserNameAsync(user, model.Email);
-                    if (!setUserNameResult.Succeeded)
-                    {
-                        TempData["StatusMessage"] = $"Error updating username: {string.Join(", ", setUserNameResult.Errors.Select(e => e.Description))}";
-                        return RedirectToAction(nameof(Profile));
-                    }
-                }
-
-                var setEmailResult = await _userManager.SetEmailAsync(user, model.Email);
-                if (!setEmailResult.Succeeded)
-                {
-                    TempData["StatusMessage"] = $"Error updating email: {string.Join(", ", setEmailResult.Errors.Select(e => e.Description))}";
-                    return RedirectToAction(nameof(Profile));
-                }
-
-                await _signInManager.RefreshSignInAsync(user);
-                TempData["StatusMessage"] = "Email updated successfully.";
+                TempData["StatusMessage"] = WebConstants.EmailUpdated;
             }
             else
             {
-                TempData["StatusMessage"] = "No changes detected for email.";
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                TempData["EmailUpdateErrors"] = errors;
             }
 
             return RedirectToAction(nameof(Profile));
@@ -266,47 +207,37 @@ namespace Blog.Controllers
         [HttpPost("Account/UpdateName")]
         [Authorize]
         [ValidateAntiForgeryToken]
+        [SupportedOSPlatform("windows")]
         public async Task<IActionResult> UpdateName(UpdateNameViewModel model)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound(string.Format(WebConstants.UserNotFound, _userManager.GetUserId(User)));
             }
 
-            if (!ModelState.IsValid)
+            if (!_validationService.ValidateUserNameUpdate(model.FirstName, model.LastName, ModelState))
             {
-                TempData["NameUpdateErrors"] = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                TempData["StatusMessage"] = "Name update failed. Please check the errors.";
+                var errors = new List<string>();
+                if (ModelState.ContainsKey("FirstName"))
+                    errors.AddRange(ModelState["FirstName"].Errors.Select(e => e.ErrorMessage));
+                if (ModelState.ContainsKey("LastName"))
+                    errors.AddRange(ModelState["LastName"].Errors.Select(e => e.ErrorMessage));
+
+                TempData["NameUpdateErrors"] = errors;
                 return RedirectToAction(nameof(Profile));
             }
 
-            bool nameChanged = user.FirstName != model.FirstName || user.LastName != model.LastName;
+            var result = await _accountService.UpdateNameAsync(user, model.FirstName, model.LastName);
 
-            if (nameChanged)
+            if (result.Succeeded)
             {
-                user.FirstName = model.FirstName;
-                user.LastName = model.LastName;
-
-                bool isInitialsPicture = string.IsNullOrEmpty(user.ProfilePicturePath) || user.ProfilePicturePath.Contains("data/UserImages/initials/");
-                if (isInitialsPicture)
-                {
-                    user.ProfilePicturePath = _initialsGenerator.GenerateInitialsImage(user.FirstName, user.LastName, user.Id);
-                }
-
-                var updateResult = await _userManager.UpdateAsync(user);
-                if (!updateResult.Succeeded)
-                {
-                    TempData["StatusMessage"] = $"Error updating name: {string.Join(", ", updateResult.Errors.Select(e => e.Description))}";
-                    return RedirectToAction(nameof(Profile));
-                }
-
-                await _signInManager.RefreshSignInAsync(user);
-                TempData["StatusMessage"] = "Name updated successfully.";
+                TempData["StatusMessage"] = WebConstants.NameUpdated;
             }
             else
             {
-                TempData["StatusMessage"] = "No changes detected for name.";
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                TempData["NameUpdateErrors"] = errors;
             }
 
             return RedirectToAction(nameof(Profile));
@@ -320,26 +251,28 @@ namespace Blog.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return NotFound($"Unable to load user with ID '{_userManager.GetUserId(User)}'.");
+                return NotFound(string.Format(WebConstants.UserNotFound, _userManager.GetUserId(User)));
             }
 
             if (!ModelState.IsValid)
             {
-                TempData["PasswordChangeErrors"] = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                TempData["StatusMessage"] = "Password change failed. Please check the errors.";
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                TempData["PasswordChangeErrors"] = errors;
                 return RedirectToAction(nameof(Profile));
             }
 
-            var changePasswordResult = await _userManager.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
-            if (!changePasswordResult.Succeeded)
+            var result = await _accountService.ChangePasswordAsync(user, model.OldPassword, model.NewPassword);
+
+            if (result.Succeeded)
             {
-                TempData["PasswordChangeErrors"] = changePasswordResult.Errors.Select(e => e.Description).ToList();
-                TempData["StatusMessage"] = "Password change failed. Please check the errors.";
-                return RedirectToAction(nameof(Profile));
+                TempData["StatusMessage"] = WebConstants.PasswordChanged;
+            }
+            else
+            {
+                var errors = result.Errors.Select(e => e.Description).ToList();
+                TempData["PasswordChangeErrors"] = errors;
             }
 
-            await _signInManager.RefreshSignInAsync(user);
-            TempData["StatusMessage"] = "Your password has been changed.";
             return RedirectToAction(nameof(Profile));
         }
 
@@ -353,42 +286,38 @@ namespace Blog.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
         {
-            if (!ModelState.IsValid)
+            if (ModelState.IsValid)
             {
-                return View(model);
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
+                {
+                    return RedirectToAction(nameof(ForgotPasswordConfirmation));
+                }
+
+                var code = await _accountService.GeneratePasswordResetTokenAsync(user);
+                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
+                var callbackUrl = Url.Page(
+                    "/Account/ResetPassword",
+                    null,
+                    new { area = "", code, userId = user.Id },
+                    Request.Scheme);
+
+                bool emailSent = await _accountService.SendPasswordResetEmailAsync(user, HtmlEncoder.Default.Encode(callbackUrl));
+
+                if (emailSent)
+                {
+                    return RedirectToAction(nameof(ForgotPasswordConfirmation));
+                }
+                else
+                {
+                    _logger.LogError(WebConstants.LogPasswordResetEmailFailed, user.Email);
+                    ModelState.AddModelError("", WebConstants.PasswordResetEmailError);
+                    return View(model);
+                }
             }
 
-            var user = await _userManager.FindByEmailAsync(model.Email);
-
-            if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
-            {
-                return RedirectToAction(nameof(ForgotPasswordConfirmation));
-            }
-
-            var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-
-            var callbackUrl = Url.Action(
-                action: nameof(ResetPassword),
-                controller: "Account",
-                values: new { userId = user.Id, code = code },
-                protocol: Request.Scheme);
-
-            var replacements = new Dictionary<string, string>
-            {
-                { "FirstName", user.FirstName ?? "User" },
-                { "ResetLink", HtmlEncoder.Default.Encode(callbackUrl) },
-                { "CurrentYear", DateTime.Now.Year.ToString() }
-            };
-
-            string emailBody = await _templateHelper.GetTemplateAsync("PasswordResetEmail.html", replacements);
-
-            await _emailSender.SendEmailAsync(
-                model.Email,
-                "Reset Your Password - Blog Website",
-                emailBody);
-
-            return RedirectToAction(nameof(ForgotPasswordConfirmation));
+            return View(model);
         }
 
         [HttpGet]
@@ -398,19 +327,19 @@ namespace Blog.Controllers
         }
 
         [HttpGet]
-        public IActionResult ResetPassword(string code = null, string userId = null)
+        public IActionResult ResetPassword(string? code = null, string? userId = null)
         {
             if (code == null || userId == null)
             {
-                return BadRequest("A code and user ID must be supplied for password reset.");
+                ModelState.AddModelError("", WebConstants.InvalidPasswordResetCode);
+                return View();
             }
 
             var model = new ResetPasswordViewModel
             {
-                Code = code,
+                Code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code)),
                 UserId = userId
             };
-
             return View(model);
         }
 
@@ -418,7 +347,7 @@ namespace Blog.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
         {
-            if (!ModelState.IsValid)
+            if (!_validationService.ValidatePasswordReset(model, ModelState))
             {
                 return View(model);
             }
@@ -426,12 +355,11 @@ namespace Blog.Controllers
             var user = await _userManager.FindByIdAsync(model.UserId);
             if (user == null)
             {
+                // Don't reveal that the user does not exist
                 return RedirectToAction(nameof(ResetPasswordConfirmation));
             }
 
-            var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(model.Code));
-
-            var result = await _userManager.ResetPasswordAsync(user, code, model.Password);
+            var result = await _accountService.ResetPasswordAsync(user, model.Code, model.Password);
             if (result.Succeeded)
             {
                 return RedirectToAction(nameof(ResetPasswordConfirmation));

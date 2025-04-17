@@ -1,0 +1,61 @@
+@model Blog.Models.Article
+
+@{
+    ViewData["Title"] = "Delete Article";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+                    <li class="breadcrumb-item"><a asp-controller="Articles" asp-action="Index">Articles</a></li>
+                    <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@Model.Id">@Model.Title</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Delete</li>
+                </ol>
+            </nav>
+
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-danger text-white">
+                    <h1 class="h3 mb-0">Delete Article</h1>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Are you sure you want to delete this article? This action cannot be undone.
+                    </div>
+
+                    <div class="mb-4">
+                        <h2 class="h4 mb-3">@Model.Title</h2>
+                        
+                        <div class="d-flex align-items-center text-muted mb-3">
+                            <small>
+                                Published on @Model.PublishedDate.ToString("MMMM d, yyyy")
+                                @if (Model.Author != null)
+                                {
+                                        <span class="ms-2">by @Model.Author.FirstName @Model.Author.LastName</span>
+                                }
+                            </small>
+                        </div>
+                        
+                        <p class="mb-3">@Model.Summary</p>
+                        
+                        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                        {
+                                <img src="@Model.ImageUrl" alt="@Model.Title" class="img-fluid rounded mb-3" style="max-height: 200px; object-fit: cover;">
+                        }
+                    </div>
+                    
+                    <form asp-action="Delete" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-danger">Delete Article</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> 

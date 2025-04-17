@@ -3,11 +3,14 @@ using Microsoft.EntityFrameworkCore;
 using Blog.Models;
 using Blog.Services;
 using Microsoft.Extensions.FileProviders;
+using System.Runtime.Versioning;
+using Blog.Controllers;
 
 namespace Blog
 {
     public class Program
     {
+        [SupportedOSPlatform("windows")]
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -18,6 +21,16 @@ namespace Blog
 
             builder.Services.AddScoped<FileService>();
             builder.Services.AddScoped<InitialsProfileImageGenerator>();
+
+            builder.Services.AddScoped<IArticleService, ArticleService>();
+            builder.Services.AddScoped<IAccountService, AccountService>();
+            builder.Services.AddScoped<IRoleService, RoleService>();
+            builder.Services.AddScoped<IValidationService, ValidationService>();
+
+            builder.Services.AddScoped<ILogger<ArticlesController>, Logger<ArticlesController>>();
+            builder.Services.AddScoped<ILogger<AccountController>, Logger<AccountController>>();
+            builder.Services.AddScoped<ILogger<RolesController>, Logger<RolesController>>();
+            builder.Services.AddScoped<ILogger<HomeController>, Logger<HomeController>>();
 
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
@@ -41,7 +54,7 @@ namespace Blog
 
             builder.Services.AddControllersWithViews();
 
-            builder.Services.AddSingleton(EnvEmailSettingsLoader.LoadEmailSettings());
+            builder.Services.AddSingleton(EnvSettingsLoader.LoadEmailSettings());
             builder.Services.AddTransient<IEmailSender, EmailSender>();
             builder.Services.AddTransient<TemplateHelper>();
 
@@ -61,6 +74,16 @@ namespace Blog
                 {
                     var context = services.GetRequiredService<ApplicationDbContext>();
                     context.Database.Migrate();
+
+                    RoleSeeder.SeedRolesAsync(services).Wait();
+
+                    var adminSettings = EnvSettingsLoader.LoadAdminSettings();
+
+                    if (!string.IsNullOrEmpty(adminSettings.Email) && !string.IsNullOrEmpty(adminSettings.Password))
+                    {
+                        RoleSeeder.SeedAdminUserAsync(services, adminSettings.Email, adminSettings.Password).Wait();
+                    }
+                    ArticleSeeder.SeedDefaultArticleAsync(context).Wait();
                 }
                 catch (Exception ex)
                 {

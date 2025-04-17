@@ -1,7 +1,7 @@
 @model Blog.Models.ProfileViewModel
 @inject Blog.Services.InitialsProfileImageGenerator InitialsGenerator
 @{
-    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "unknown";
     var profilePicPath = !string.IsNullOrEmpty(Model.ExistingProfilePicturePath)
     ? $"/{Model.ExistingProfilePicturePath.TrimStart('/')}"
     : $"/{InitialsGenerator.GenerateInitialsImage(Model.FirstName ?? "", Model.LastName ?? "", userId).TrimStart('/')}";
@@ -12,14 +12,16 @@
     @Html.AntiForgeryToken()
     <div class="text-center mb-4">
         <img src="@profilePicPath" alt="Profile Picture" class="rounded-circle profile-picture-lg mb-3" />
-        @if (!string.IsNullOrEmpty(Model.ExistingProfilePicturePath) && !Model.ExistingProfilePicturePath.Contains("data/UserImages/initials/"))
+        @if (!string.IsNullOrEmpty(Model.ExistingProfilePicturePath) &&
+                !Model.ExistingProfilePicturePath.Contains("data/UserImages/initials/"))
         {
-                <div class="form-check mb-2 d-inline-block">
-                    <input name="RemoveProfilePicture" type="checkbox" value="true" class="form-check-input" id="removePicCheckbox" />
-                    <input type="hidden" name="RemoveProfilePicture" value="false" />
-                    <label for="removePicCheckbox" class="form-check-label">Remove current picture (reverts to initials)</label>
-                </div>
-                <hr />
+            <div class="form-check mb-2 d-inline-block">
+                <input name="RemoveProfilePicture" type="checkbox" value="true" class="form-check-input"
+                    id="removePicCheckbox" />
+                <input type="hidden" name="RemoveProfilePicture" value="false" />
+                <label for="removePicCheckbox" class="form-check-label">Remove current picture (reverts to initials)</label>
+            </div>
+            <hr />
         }
         <div class="mb-3">
             <label name="ProfilePicture" class="form-label">Upload New Picture</label>
@@ -31,4 +33,4 @@
     <div class="form-group mt-3">
         <button type="submit" class="btn btn-primary">Update Picture</button>
     </div>
-</form> 
+</form>
