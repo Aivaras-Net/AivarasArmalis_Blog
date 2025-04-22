@@ -41,12 +41,22 @@ namespace Blog.Controllers
                 return NotFound("Article not found");
             }
 
+            int? rootCommentId = null;
             if (parentCommentId.HasValue)
             {
                 var parentComment = await _commentService.GetCommentByIdAsync(parentCommentId.Value);
                 if (parentComment == null)
                 {
                     return NotFound("Parent comment not found");
+                }
+
+                if (parentComment.ParentCommentId.HasValue)
+                {
+                    rootCommentId = parentComment.ParentCommentId.Value;
+                }
+                else
+                {
+                    rootCommentId = parentComment.Id;
                 }
             }
 
@@ -66,6 +76,11 @@ namespace Blog.Controllers
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
+                if (rootCommentId.HasValue)
+                {
+                    var replies = await _commentService.GetRepliesAsync(rootCommentId.Value);
+                    return PartialView("_RepliesPartial", replies);
+                }
                 return PartialView("_CommentPartial", createdComment);
             }
 

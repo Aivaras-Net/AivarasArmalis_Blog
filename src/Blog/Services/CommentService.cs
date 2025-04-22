@@ -144,11 +144,34 @@ namespace Blog.Services
 
         public async Task<List<Comment>> GetRepliesAsync(int commentId)
         {
-            return await _context.Comments
+            var replies = await _context.Comments
                 .Include(c => c.Author)
                 .Where(c => c.ParentCommentId == commentId)
                 .OrderBy(c => c.CreatedAt)
                 .ToListAsync();
+
+            foreach (var reply in replies)
+            {
+                await LoadNestedRepliesAsync(reply);
+            }
+
+            return replies;
+        }
+
+        private async Task LoadNestedRepliesAsync(Comment comment)
+        {
+            var replies = await _context.Comments
+                .Include(c => c.Author)
+                .Where(c => c.ParentCommentId == comment.Id)
+                .OrderBy(c => c.CreatedAt)
+                .ToListAsync();
+
+            comment.Replies = replies;
+
+            foreach (var reply in replies)
+            {
+                await LoadNestedRepliesAsync(reply);
+            }
         }
     }
 }

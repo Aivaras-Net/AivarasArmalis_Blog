@@ -230,7 +230,13 @@
             
             $(document).on('click', '.reply-button', function() {
                 var commentId = $(this).data('comment-id');
+                var rootCommentId = $(this).data('root-comment-id');
+                
+                $('.reply-form').addClass('d-none');
+                
                 $('#reply-form-' + commentId).removeClass('d-none');
+                
+                $('#reply-form-' + commentId + ' form').attr('data-root-comment-id', rootCommentId);
             });
             
             $(document).on('click', '.cancel-reply', function() {
@@ -242,21 +248,101 @@
                 var commentId = $(this).data('comment-id');
                 var $button = $(this);
                 
+                $button.addClass('active');
+                
+                var originalText = $button.html();
+                $button.html('<i class="bi bi-hourglass-split me-1"></i> Loading...');
+                
                 $.ajax({
                     url: '@Url.Action("GetReplies", "Comments")',
                     data: { commentId: commentId },
                     type: 'GET',
                     success: function(result) {
                         $('#replies-' + commentId).html(result);
+                        $('.load-replies-button').off('click').on('click', function() {
+                            var nestedCommentId = $(this).data('comment-id');
+                            loadReplies(nestedCommentId);
+                        });
+                        
+                        $button.html('<i class="bi bi-chevron-up me-1"></i> Hide replies');
+                    },
+                    error: function() {
+                        $button.html(originalText);
+                        $button.removeClass('active');
                     }
                 });
             });
         });
         
+        function loadReplies(commentId) {
+            var $button = $('#replies-' + commentId + ' .load-replies-button');
+            
+            $button.addClass('active');
+            
+            var originalText = $button.html();
+            $button.html('<i class="bi bi-hourglass-split me-1"></i> Loading...');
+            
+            $.ajax({
+                url: '@Url.Action("GetReplies", "Comments")',
+                data: { commentId: commentId },
+                type: 'GET',
+                success: function(result) {
+                    $('#replies-' + commentId).html(result);
+                    
+                    $button.html('<i class="bi bi-chevron-up me-1"></i> Hide replies');
+                },
+                error: function() {
+                    $button.html(originalText);
+                    $button.removeClass('active');
+                }
+            });
+        }
+        
         function removeComment(commentId) {
             $('#comment-' + commentId).fadeOut(function() {
                 $(this).remove();
             });
+        }
+
+        function refreshReplies(commentId) {
+            $.ajax({
+                url: '@Url.Action("GetReplies", "Comments")',
+                data: { commentId: commentId },
+                type: 'GET',
+                success: function(result) {
+                    $('#replies-' + commentId).html(result);
+                }
+            });
+        }
+
+        function findRootCommentId(commentId) {
+            var currentElement = $('#comment-' + commentId);
+            var rootId = commentId;
+            
+            while (currentElement.parent().closest('.comment').length > 0) {
+                currentElement = currentElement.parent().closest('.comment');
+                rootId = currentElement.attr('id').replace('comment-', '');
+            }
+            
+            return rootId;
+        }
+
+        function handleReplySuccess(response, status, xhr) {
+            $('.reply-form').addClass('d-none');
+            
+            var form = $('form[data-ajax-success="handleReplySuccess"]');
+            var parentCommentId = form.find('input[name="parentCommentId"]').val();
+            
+            var rootCommentId = findRootCommentId(parentCommentId);
+            
+            refreshReplies(rootCommentId);
+            
+            setTimeout(function() {
+                var loadButton = $('#replies-' + rootCommentId + ' .load-replies-button');
+                if (loadButton.length > 0 && !loadButton.hasClass('active')) {
+                    loadButton.click();
+                }
+            }, 300);
         }
     </script>
 }
