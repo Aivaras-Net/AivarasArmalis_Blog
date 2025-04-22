@@ -55,7 +55,8 @@
             {
                 <div class="edit-form d-none mt-3" id="edit-form-@Model.Id">
                     <form asp-controller="Comments" asp-action="Edit" method="post" data-ajax="true" data-ajax-method="post"
-                        data-ajax-update="#comment-@Model.Id">
+                        data-ajax-success="handleEditSuccess" data-ajax-failure="handleAjaxError">
+                        @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.Id" />
                         <div class="form-group">
                             <textarea class="form-control" name="content" rows="3" required>@Model.Content</textarea>
@@ -85,8 +86,10 @@
                         <i class="bi bi-pencil me-1"></i> Edit
                     </button>
 
-                    <form asp-controller="Comments" asp-action="Delete" method="post" class="d-inline" data-ajax="true"
-                        data-ajax-method="post" data-ajax-success="removeComment(@Model.Id)">
+                    <form asp-controller="Comments" asp-action="Delete" method="post" class="d-inline delete-form"
+                        data-ajax="true" data-ajax-method="post" data-ajax-success="handleDeleteSuccess"
+                        data-ajax-failure="handleAjaxError" data-comment-id="@Model.Id">
+                        @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.Id" />
                         <button type="submit" class="btn btn-link btn-sm text-danger p-0 text-decoration-none">
                             <i class="bi bi-trash me-1"></i> Delete
@@ -99,7 +102,9 @@
                 @if (SignInManager.IsSignedIn(User) && isCommentator)
                 {
                     <form asp-controller="Comments" asp-action="Create" method="post" data-ajax="true"
-                        data-ajax-method="post" data-ajax-success="handleReplySuccess">
+                        data-ajax-method="post" data-ajax-success="handleReplySuccess" data-ajax-failure="handleAjaxError"
+                        data-ajax-mode="replace">
+                        @Html.AntiForgeryToken()
                         <input type="hidden" name="articleId" value="@Model.ArticleId" />
                         <input type="hidden" name="parentCommentId" value="@Model.Id" />
                         <div class="form-group">

@@ -16,6 +16,11 @@
     .nested-replies .nested-replies .nested-replies .border-start {
         border-color: rgba(var(--bs-primary-rgb), 0.2) !important;
     }
+
+    .replies {
+        overflow: hidden;
+        transition: all 0.3s ease-in-out;
+    }
 </style>
 
 @if (Model != null && Model.Any())

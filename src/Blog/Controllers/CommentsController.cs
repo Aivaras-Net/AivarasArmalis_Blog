@@ -76,10 +76,13 @@ namespace Blog.Controllers
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                if (rootCommentId.HasValue)
+                if (parentCommentId.HasValue)
                 {
-                    var replies = await _commentService.GetRepliesAsync(rootCommentId.Value);
-                    return PartialView("_RepliesPartial", replies);
+                    if (rootCommentId.HasValue)
+                    {
+                        return PartialView("_CommentPartial", createdComment);
+                    }
+                    return PartialView("_CommentPartial", createdComment);
                 }
                 return PartialView("_CommentPartial", createdComment);
             }
@@ -134,7 +137,7 @@ namespace Blog.Controllers
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return Json(new { success = true });
+                return Json(new { success = true, commentId = id });
             }
 
             return RedirectToAction("Details", "Articles", new { id = comment.ArticleId });
