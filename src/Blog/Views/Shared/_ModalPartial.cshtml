@@ -1,0 +1,31 @@
+@{
+    var modalId = ViewData["ModalId"] as string ?? "confirmationModal";
+    var modalTitle = ViewData["ModalTitle"] as string ?? "Confirmation";
+    var modalBody = ViewData["ModalBody"] as string ?? "Are you sure you want to proceed?";
+    var confirmButtonText = ViewData["ConfirmButtonText"] as string ?? "Confirm";
+    var confirmButtonClass = ViewData["ConfirmButtonClass"] as string ?? "btn-primary";
+    var cancelButtonText = ViewData["CancelButtonText"] as string ?? "Cancel";
+    var modalSize = ViewData["ModalSize"] as string ?? "";
+}
+
+<div class="modal fade" id="@modalId" tabindex="-1" aria-labelledby="@(modalId)Label" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog @modalSize">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="@(modalId)Label">@modalTitle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @Html.Raw(modalBody)
+                @if (ViewData["ModalPartialView"] != null)
+                {
+                            @await Html.PartialAsync(ViewData["ModalPartialView"] as string)
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">@cancelButtonText</button>
+                <button type="button" class="btn @confirmButtonClass confirm-action">@confirmButtonText</button>
+            </div>
+        </div>
+    </div>
+</div>

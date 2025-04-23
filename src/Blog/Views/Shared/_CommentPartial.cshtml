@@ -87,8 +87,7 @@
                     </button>
 
                     <form asp-controller="Comments" asp-action="Delete" method="post" class="d-inline delete-form"
-                        data-ajax="true" data-ajax-method="post" data-ajax-success="handleDeleteSuccess"
-                        data-ajax-failure="handleAjaxError" data-comment-id="@Model.Id">
+                        data-comment-id="@Model.Id">
                         @Html.AntiForgeryToken()
                         <input type="hidden" name="id" value="@Model.Id" />
                         <button type="submit" class="btn btn-link btn-sm text-danger p-0 text-decoration-none">
