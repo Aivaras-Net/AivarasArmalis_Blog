@@ -144,6 +144,7 @@ namespace Blog.Controllers
         }
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetReplies(int commentId)
         {
             var replies = await _commentService.GetRepliesAsync(commentId);
