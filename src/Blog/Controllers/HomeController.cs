@@ -54,6 +54,36 @@ namespace Blog.Controllers
             return View(homeViewModel);
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Search(string searchTerm)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = "Search term is required" });
+                }
+                return RedirectToAction(nameof(Index));
+            }
+
+            var searchResults = await _context.Articles
+                .Include(a => a.Author)
+                .Include(a => a.Votes)
+                .Where(a => a.Title.Contains(searchTerm) ||
+                           (a.Summary != null && a.Summary.Contains(searchTerm)) ||
+                           (a.Content != null && a.Content.Contains(searchTerm)))
+                .OrderByDescending(a => a.PublishedDate)
+                .ToListAsync();
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return PartialView("_SearchResults", searchResults);
+            }
+
+            ViewBag.SearchTerm = searchTerm;
+            return View(searchResults);
+        }
+
         public IActionResult Privacy()
         {
             return View();

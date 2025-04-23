@@ -10,89 +10,164 @@
     var isWriterOrAdmin = User.IsInRole("Writer") || User.IsInRole("Admin");
 }
 
-<div class="container py-5">
-    <div class="row mb-5">
+<div class="container-fluid py-4">
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1 class="display-4">Latest Articles</h1>
+            <div class="card border-0 bg-light shadow-sm rounded-3">
+                <div class="card-body p-4">
+                    <div class="row align-items-center">
+                        <div class="col-lg-6 mb-3 mb-lg-0">
+                            <h1 class="display-5 fw-bold mb-0">Discover Articles</h1>
+                            <p class="text-muted mt-2">Find stories, insights, and knowledge that matter to you</p>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="d-flex" id="searchForm">
+                                <input type="text" id="searchTerm" class="form-control form-control-lg me-2"
+                                    placeholder="Search for articles..." aria-label="Search">
+                                <button class="btn btn-primary btn-lg" type="button" id="searchButton">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4" id="searchResultsSection" style="display: none;">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h2 class="h4 mb-0"><i class="bi bi-search me-2"></i>Search Results <span id="searchTermDisplay"
+                            class="text-muted fs-5 ms-2"></span></h2>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="closeSearchResults">
+                        <i class="bi bi-x-lg"></i> Close
+                    </button>
+                </div>
+                <div class="card-body" id="searchResults">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="mainContent">
+        <div class="col-lg-3 mb-4">
+            <div class="sticky-top" style="top: 1rem; z-index: 1000;">
+                <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+                    <div class="card-header bg-primary text-white p-3">
+                        <h3 class="h4 mb-0"><i class="bi bi-trophy-fill me-2"></i>Top Ranked</h3>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            @foreach (var article in Model.TopRankedArticles)
+                            {
+                                <a asp-controller="Articles" asp-action="Details" asp-route-id="@article.Id"
+                                    class="list-group-item list-group-item-action p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <h6 class="mb-0 text-truncate" style="max-width: 70%;">@article.Title</h6>
+                                        <span
+                                            class="badge bg-@(article.VoteScore > 0 ? "success" : article.VoteScore < 0 ? "danger" : "secondary") rounded-pill">
+                                            @article.VoteScore
+                                        </span>
+                                    </div>
+                                    <small class="text-muted d-block">by @(article.Author?.FirstName)
+                                        @(article.Author?.LastName)</small>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light p-3 text-center">
+                        <a asp-controller="Articles" asp-action="Index" class="text-decoration-none">View all articles
+                            <i class="bi bi-arrow-right"></i></a>
+                    </div>
+                </div>
+
                 @if (isWriterOrAdmin)
                 {
-                    <a asp-controller="Articles" asp-action="Create" class="btn btn-primary">
-                        <i class="bi bi-plus-lg me-1"></i> Write New Article
-                    </a>
+                    <div class="d-grid mt-3">
+                        <a asp-controller="Articles" asp-action="Create" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i> Write New Article
+                        </a>
+                    </div>
                 }
             </div>
+        </div>
 
-            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        <div class="col-lg-6 mb-4">
+            <h2 class="h3 mb-3 pb-2 border-bottom"><i class="bi bi-clock-history me-2"></i>Latest Articles</h2>
+            <div class="row g-4">
                 @foreach (var article in Model.RecentArticles)
                 {
-                    <div class="col">
-                        <div class="card h-100 shadow-sm border-0">
-                            @if (!string.IsNullOrEmpty(article.ImageUrl))
-                            {
-                                <img src="@article.ImageUrl" class="card-img-top" alt="@article.Title"
-                                    style="height: 200px; object-fit: cover;">
-                            }
-                            else
-                            {
-                                <div class="bg-light text-center p-5" style="height: 200px;">
-                                    <i class="bi bi-journal-text display-4 text-muted"></i>
+                    <div class="col-12">
+                        <div class="card h-100 shadow-sm border-0 rounded-3 overflow-hidden">
+                            <div class="row g-0">
+                                <div class="col-md-4">
+                                    @if (!string.IsNullOrEmpty(article.ImageUrl))
+                                    {
+                                        <img src="@article.ImageUrl" class="img-fluid h-100" alt="@article.Title"
+                                            style="object-fit: cover;">
+                                    }
+                                    else
+                                    {
+                                        <div class="bg-light h-100 d-flex align-items-center justify-content-center">
+                                            <i class="bi bi-journal-text display-4 text-muted"></i>
+                                        </div>
+                                    }
                                 </div>
-                            }
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <h5 class="card-title mb-0">@article.Title</h5>
-                                    <span
-                                        class="badge bg-@(article.VoteScore > 0 ? "success" : article.VoteScore < 0 ? "danger" : "secondary") rounded-pill">
-                                        @article.VoteScore
-                                    </span>
-                                </div>
-                                <div class="mb-3 small text-muted">
-                                    <i class="bi bi-plus-lg text-success me-1"></i> @article.UpvoteCount
-                                    <i class="bi bi-dash-lg text-danger mx-1"></i> @article.DownvoteCount
-                                </div>
-                                @if (!string.IsNullOrEmpty(article.Summary))
-                                {
-                                    <p class="card-text text-muted">@article.Summary</p>
-                                }
-                                else
-                                {
-                                    <p class="card-text text-muted fst-italic">No summary provided</p>
-                                }
-                            </div>
-                            <div class="card-footer bg-transparent border-0">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <div class="d-flex align-items-center">
-                                        @if (article.Author != null)
+                                <div class="col-md-8">
+                                    <div class="card-body d-flex flex-column h-100">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h3 class="card-title h5">@article.Title</h3>
+                                            <span
+                                                class="badge bg-@(article.VoteScore > 0 ? "success" : article.VoteScore < 0 ? "danger" : "secondary") rounded-pill">
+                                                @article.VoteScore
+                                            </span>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(article.Summary))
                                         {
-                                            @if (!string.IsNullOrEmpty(article.Author.ProfilePicturePath))
-                                            {
-                                                <img src="/@article.Author.ProfilePicturePath"
-                                                    alt="@article.Author.FirstName @article.Author.LastName"
-                                                    class="rounded-circle me-2"
-                                                    style="width: 30px; height: 30px; object-fit: cover;">
-                                            }
-                                            else
-                                            {
-                                                <div class="bg-light rounded-circle me-2 d-flex align-items-center justify-content-center"
-                                                    style="width: 30px; height: 30px;">
-                                                    <i class="bi bi-person"></i>
-                                                </div>
-                                            }
-                                            <small class="text-muted">
-                                                @article.PublishedDate.ToString("MMM d, yyyy")
-                                                <span>by @article.Author.FirstName @article.Author.LastName</span>
-                                            </small>
+                                            <p class="card-text text-muted">@article.Summary</p>
                                         }
                                         else
                                         {
-                                            <small class="text-muted">
-                                                @article.PublishedDate.ToString("MMM d, yyyy")
-                                            </small>
+                                            <p class="card-text text-muted fst-italic">No summary provided</p>
                                         }
+                                        <div class="mt-auto">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div class="d-flex align-items-center">
+                                                    @if (article.Author != null)
+                                                    {
+                                                        @if (!string.IsNullOrEmpty(article.Author.ProfilePicturePath))
+                                                        {
+                                                            <img src="/@article.Author.ProfilePicturePath"
+                                                                alt="@article.Author.FirstName @article.Author.LastName"
+                                                                class="rounded-circle me-2"
+                                                                style="width: 30px; height: 30px; object-fit: cover;">
+                                                        }
+                                                        else
+                                                        {
+                                                            <div class="bg-light rounded-circle me-2 d-flex align-items-center justify-content-center"
+                                                                style="width: 30px; height: 30px;">
+                                                                <i class="bi bi-person"></i>
+                                                            </div>
+                                                        }
+                                                        <small class="text-muted">
+                                                            @article.PublishedDate.ToString("MMM d, yyyy")
+                                                            <span>by @article.Author.FirstName @article.Author.LastName</span>
+                                                        </small>
+                                                    }
+                                                    else
+                                                    {
+                                                        <small class="text-muted">
+                                                            @article.PublishedDate.ToString("MMM d, yyyy")
+                                                        </small>
+                                                    }
+                                                </div>
+                                                <a asp-controller="Articles" asp-action="Details" asp-route-id="@article.Id"
+                                                    class="btn btn-sm btn-outline-primary">Read more</a>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <a asp-controller="Articles" asp-action="Details" asp-route-id="@article.Id"
-                                        class="btn btn-sm btn-outline-primary">Read</a>
                                 </div>
                             </div>
                         </div>
@@ -100,60 +175,87 @@
                 }
             </div>
         </div>
-    </div>
 
-    <div class="row mb-5">
-        <div class="col-lg-6 mb-4 mb-lg-0">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">Top Ranked Articles</h3>
-                </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        @foreach (var article in Model.TopRankedArticles)
-                        {
-                            <a asp-controller="Articles" asp-action="Details" asp-route-id="@article.Id"
-                                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="mb-1">@article.Title</h5>
-                                    <small class="text-muted">by @(article.Author?.FirstName)
-                                        @(article.Author?.LastName)</small>
-                                </div>
-                                <span
-                                    class="badge bg-@(article.VoteScore > 0 ? "success" : article.VoteScore < 0 ? "danger" : "secondary") rounded-pill">
-                                    @article.VoteScore
-                                </span>
-                            </a>
-                        }
+        <div class="col-lg-3 mb-4">
+            <div class="sticky-top" style="top: 1rem; z-index: 1000;">
+                <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+                    <div class="card-header bg-info text-white p-3">
+                        <h3 class="h4 mb-0"><i class="bi bi-chat-left-text-fill me-2"></i>Recent Discussions</h3>
                     </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-6">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-info text-white">
-                    <h3 class="mb-0">Recently Commented Articles</h3>
-                </div>
-                <div class="card-body">
-                    <div class="list-group list-group-flush">
-                        @foreach (var article in Model.RecentlyCommentedArticles)
-                        {
-                            <a asp-controller="Articles" asp-action="Details" asp-route-id="@article.Id"
-                                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="mb-1">@article.Title</h5>
-                                    <small class="text-muted">by @(article.Author?.FirstName)
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            @foreach (var article in Model.RecentlyCommentedArticles)
+                            {
+                                <a asp-controller="Articles" asp-action="Details" asp-route-id="@article.Id"
+                                    class="list-group-item list-group-item-action p-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <h6 class="mb-0 text-truncate" style="max-width: 70%;">@article.Title</h6>
+                                        <span class="badge bg-secondary rounded-pill">
+                                            @article.Comments.Count <i class="bi bi-chat-text ms-1"></i>
+                                        </span>
+                                    </div>
+                                    <small class="text-muted d-block">by @(article.Author?.FirstName)
                                         @(article.Author?.LastName)</small>
-                                </div>
-                                <span class="badge bg-secondary rounded-pill">
-                                    @article.Comments.Count comments
-                                </span>
-                            </a>
-                        }
+                                </a>
+                            }
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light p-3 text-center">
+                        <a asp-controller="Articles" asp-action="Index" class="text-decoration-none">Join the discussion
+                            <i class="bi bi-arrow-right"></i></a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            function performSearch() {
+                var searchTerm = $("#searchTerm").val().trim();
+                if (searchTerm.length < 1) {
+                    return;
+                }
+
+                $("#searchTermDisplay").text('"' + searchTerm + '"');
+                $("#searchResults").html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-2">Searching...</p></div>');
+
+                $("#searchResultsSection").show();
+                $('html, body').animate({
+                    scrollTop: $("#searchResultsSection").offset().top - 20
+                }, 500);
+
+                $.ajax({
+                    url: '@Url.Action("Search", "Home")',
+                    type: "GET",
+                    data: { searchTerm: searchTerm },
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    },
+                    success: function (result) {
+                        $("#searchResults").html(result);
+                    },
+                    error: function () {
+                        $("#searchResults").html('<div class="alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>An error occurred while searching. Please try again.</div>');
+                    }
+                });
+            }
+
+            $("#searchButton").click(performSearch);
+
+            $("#searchTerm").keypress(function (e) {
+                if (e.which === 13) {
+                    performSearch();
+                    return false;
+                }
+            });
+
+            $("#closeSearchResults").click(function () {
+                $("#searchResultsSection").hide();
+                $("#searchTerm").val('');
+            });
+        });
+    </script>
+}
