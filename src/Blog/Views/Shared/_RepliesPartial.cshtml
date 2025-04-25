@@ -1,0 +1,47 @@
+@model IEnumerable<Blog.Models.Comment>
+
+<style>
+    .nested-replies {
+        margin-left: 1rem;
+    }
+
+    .nested-replies .border-start {
+        border-color: rgba(var(--bs-primary-rgb), 0.6) !important;
+    }
+
+    .nested-replies .nested-replies .border-start {
+        border-color: rgba(var(--bs-primary-rgb), 0.4) !important;
+    }
+
+    .nested-replies .nested-replies .nested-replies .border-start {
+        border-color: rgba(var(--bs-primary-rgb), 0.2) !important;
+    }
+
+    .replies {
+        overflow: hidden;
+        transition: all 0.3s ease-in-out;
+    }
+</style>
+
+@if (Model != null && Model.Any())
+{
+    <div class="replies mt-2">
+        @foreach (var reply in Model)
+        {
+            <div class="ms-4 border-start border-2 ps-2 mb-2">
+                <partial name="_CommentPartial" model="reply" />
+
+                @if (reply.Replies != null && reply.Replies.Any())
+                {
+                    <div class="nested-replies">
+                        <partial name="_RepliesPartial" model="reply.Replies" />
+                    </div>
+                }
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="text-muted small ms-4 mt-2">No replies yet</div>
+}
