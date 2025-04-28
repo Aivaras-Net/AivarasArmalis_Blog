@@ -9,16 +9,16 @@ namespace Blog.Controllers
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly IArticleService _articleService;
+        private readonly IArticleReader _articleReader;
         private readonly ApplicationDbContext _context;
 
         public HomeController(
             ILogger<HomeController> logger,
-            IArticleService articleService,
+            IArticleReader articleReader,
             ApplicationDbContext context)
         {
             _logger = logger;
-            _articleService = articleService;
+            _articleReader = articleReader;
             _context = context;
         }
 

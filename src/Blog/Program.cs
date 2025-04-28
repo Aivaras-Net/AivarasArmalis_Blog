@@ -22,10 +22,11 @@ namespace Blog
             builder.Services.AddScoped<FileService>();
             builder.Services.AddScoped<InitialsProfileImageGenerator>();
 
-            builder.Services.AddScoped<IArticleService, ArticleService>();
+            builder.Services.AddArticleServices();
+
+            builder.Services.AddValidationServices();
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
-            builder.Services.AddScoped<IValidationService, ValidationService>();
             builder.Services.AddScoped<ICommentService, CommentService>();
             builder.Services.AddScoped<ICommentReportService, CommentReportService>();
 
@@ -36,6 +37,10 @@ namespace Blog
             builder.Services.AddScoped<ILogger<CommentsController>, Logger<CommentsController>>();
             builder.Services.AddScoped<ILogger<CommentReportsController>, Logger<CommentReportsController>>();
             builder.Services.AddScoped<ILogger<CommentReportService>, Logger<CommentReportService>>();
+            builder.Services.AddScoped<ILogger<ArticleRepository>, Logger<ArticleRepository>>();
+            builder.Services.AddScoped<ILogger<ArticleReader>, Logger<ArticleReader>>();
+            builder.Services.AddScoped<ILogger<ArticleWriter>, Logger<ArticleWriter>>();
+            builder.Services.AddScoped<ILogger<ArticleVoting>, Logger<ArticleVoting>>();
 
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {

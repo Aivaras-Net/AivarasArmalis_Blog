@@ -10,18 +10,18 @@ namespace Blog.Controllers
     public class CommentsController : Controller
     {
         private readonly ICommentService _commentService;
-        private readonly IArticleService _articleService;
+        private readonly IArticleReader _articleReader;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<CommentsController> _logger;
 
         public CommentsController(
             ICommentService commentService,
-            IArticleService articleService,
+            IArticleReader articleReader,
             UserManager<ApplicationUser> userManager,
             ILogger<CommentsController> logger)
         {
             _commentService = commentService;
-            _articleService = articleService;
+            _articleReader = articleReader;
             _userManager = userManager;
             _logger = logger;
         }
@@ -35,7 +35,7 @@ namespace Blog.Controllers
                 return BadRequest("Comment content cannot be empty");
             }
 
-            var article = await _articleService.GetArticleByIdAsync(articleId);
+            var article = await _articleReader.GetArticleByIdAsync(articleId);
             if (article == null)
             {
                 return NotFound("Article not found");
