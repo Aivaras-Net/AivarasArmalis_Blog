@@ -36,7 +36,6 @@ namespace Blog.Controllers
 
             var userId = _userManager.GetUserId(User);
 
-            // Check if user has already reported this comment
             bool hasReported = await _reportService.HasUserReportedCommentAsync(commentId, userId);
             if (hasReported)
             {

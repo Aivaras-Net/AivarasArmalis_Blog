@@ -4,18 +4,32 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Blog</title>
+    <title>@ViewData["Title"] - The Blog</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Blog.styles.css" asp-append-version="true" />
 </head>
 
-<body>
+<body class="newspaper-body">
     <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Blog</a>
+        <div class="newspaper-masthead">
+            <div class="container">
+                <div class="newspaper-header-top">
+                    <div class="newspaper-date">@DateTime.Now.ToString("dddd, MMMM d, yyyy")</div>
+                    <div class="newspaper-weather">Always Sunny</div>
+                </div>
+                <h1 class="newspaper-title">The Blog</h1>
+                <p class="newspaper-motto">"All the Articles That's Fit to Print"</p>
+            </div>
+        </div>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm newspaper-nav mb-3">
+            <div class="container">
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
                     aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -23,33 +37,33 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Front Page</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Articles" asp-action="Index">All
+                            <a class="nav-link" asp-area="" asp-controller="Articles" asp-action="Index">All
                                 Articles</a>
                         </li>
                         @if (User.IsInRole("Admin"))
                         {
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdown" role="button"
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
                                     data-bs-toggle="dropdown" aria-expanded="false">
-                                    Admin
+                                    Editorial Office
                                 </a>
-                                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <ul class="dropdown-menu newspaper-dropdown" aria-labelledby="navbarDropdown">
                                     <li>
                                         <a class="dropdown-item" asp-controller="Roles" asp-action="Index">
-                                            <i class="bi bi-people me-2"></i>Manage Roles
+                                            <i class="bi bi-people me-2"></i>Manage Staff
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" asp-controller="CommentReports" asp-action="Index">
-                                            <i class="bi bi-flag me-2"></i>Comment Reports
+                                            <i class="bi bi-flag me-2"></i>Reader Complaints
                                         </a>
                                     </li>
                                     <li>
                                         <a class="dropdown-item" asp-controller="CommentReports" asp-action="Pending">
-                                            <i class="bi bi-exclamation-circle me-2"></i>Pending Reports
+                                            <i class="bi bi-exclamation-circle me-2"></i>Pending Complaints
                                         </a>
                                     </li>
                                 </ul>
@@ -61,15 +75,18 @@
             </div>
         </nav>
     </header>
-    <div class="container">
+    <div class="container newspaper-container">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer class="newspaper-footer">
         <div class="container">
-            &copy; 2025 - Blog
+            <div class="newspaper-footer-content">
+                <h5>The Blog</h5>
+                <p>&copy; @DateTime.Now.Year</p>
+            </div>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

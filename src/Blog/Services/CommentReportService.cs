@@ -68,7 +68,6 @@ namespace Blog.Services
         {
             try
             {
-                // Check if the comment exists
                 var comment = await _context.Comments.FindAsync(commentId);
                 if (comment == null)
                 {
@@ -76,7 +75,6 @@ namespace Blog.Services
                     return null;
                 }
 
-                // Check if the user has already reported this comment
                 bool hasReported = await HasUserReportedCommentAsync(commentId, reporterId);
                 if (hasReported)
                 {
@@ -163,7 +161,6 @@ namespace Blog.Services
 
                 _context.Comments.Update(comment);
 
-                // Update any pending reports for this comment to mark them as "ActionTaken"
                 var pendingReports = await _context.CommentReports
                     .Where(r => r.CommentId == commentId && r.Status == ReportStatus.Pending)
                     .ToListAsync();

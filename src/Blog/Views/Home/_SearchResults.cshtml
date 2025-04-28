@@ -2,86 +2,122 @@
 
 @if (!Model.Any())
 {
-        <div class="alert alert-info mt-3">
-            <i class="bi bi-info-circle me-2"></i> No articles found matching your search term.
-        </div>
+    <div class="newspaper-alert">
+        <i class="bi bi-info-circle me-2"></i> No articles found matching your search term.
+    </div>
 }
 else
 {
-        <div class="row g-4 mt-2">
-            @foreach (var article in Model)
-            {
-                    <div class="col-12">
-                        <div class="card h-100 shadow-sm border-0 rounded-3 overflow-hidden">
-                            <div class="row g-0">
-                                <div class="col-md-3">
-                                    @if (!string.IsNullOrEmpty(article.ImageUrl))
-                                    {
-                                            <img src="@article.ImageUrl" class="img-fluid h-100" alt="@article.Title"
-                                                style="object-fit: cover;">
-                                    }
-                                    else
-                                    {
-                                            <div class="bg-light h-100 d-flex align-items-center justify-content-center">
-                                                <i class="bi bi-journal-text display-4 text-muted"></i>
-                                            </div>
-                                    }
-                                </div>
-                                <div class="col-md-9">
-                                    <div class="card-body d-flex flex-column h-100">
-                                        <div class="d-flex justify-content-between align-items-start mb-2">
-                                            <h3 class="card-title h5">@article.Title</h3>
-                                            <span class="badge bg-@(article.VoteScore > 0 ? "success" : article.VoteScore < 0 ? "danger" : "secondary") rounded-pill">
-                                                @article.VoteScore
-                                            </span>
-                                        </div>
-                                        @if (!string.IsNullOrEmpty(article.Summary))
+    <div class="newspaper-search-results">
+        @foreach (var article in Model)
+        {
+            <div class="newspaper-search-item">
+                <div class="row g-0">
+                    <div class="col-md-3">
+                        @if (!string.IsNullOrEmpty(article.ImageUrl))
+                        {
+                            <img src="@article.ImageUrl" class="newspaper-search-img" alt="@article.Title">
+                        }
+                        else
+                        {
+                            <div class="newspaper-search-placeholder d-flex align-items-center justify-content-center">
+                                <i class="bi bi-journal-text display-4"></i>
+                            </div>
+                        }
+                    </div>
+                    <div class="col-md-9">
+                        <div class="newspaper-search-content">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h3 class="newspaper-search-title">@article.Title</h3>
+                                <span
+                                    class="newspaper-score @(article.VoteScore > 0 ? "positive" : article.VoteScore < 0 ? "negative" : "neutral")">
+                                    @article.VoteScore
+                                </span>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(article.Summary))
+                            {
+                                <p class="newspaper-summary">@article.Summary</p>
+                            }
+                            else
+                            {
+                                <p class="newspaper-summary fst-italic">No summary provided</p>
+                            }
+
+                            <div class="newspaper-search-footer">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="newspaper-byline small">
+                                        @if (article.Author != null)
                                         {
-                                                <p class="card-text text-muted">@article.Summary</p>
+                                            <span>By @article.Author.FirstName @article.Author.LastName</span>
+                                
+                                            <br>
+                                            <span class="newspaper-date">@article.PublishedDate.ToString("MMMM d, yyyy")</span>
                                         }
                                         else
                                         {
-                                                <p class="card-text text-muted fst-italic">No summary provided</p>
+                                            <span class="newspaper-date">@article.PublishedDate.ToString("MMMM d, yyyy")</span>
                                         }
-                                        <div class="mt-auto">
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <div class="d-flex align-items-center">
-                                                    @if (article.Author != null)
-                                                    {
-                                                            @if (!string.IsNullOrEmpty(article.Author.ProfilePicturePath))
-                                                            {
-                                                                    <img src="/@article.Author.ProfilePicturePath"
-                                                                        alt="@article.Author.FirstName @article.Author.LastName" class="rounded-circle me-2"
-                                                                        style="width: 30px; height: 30px; object-fit: cover;">
-                                                            }
-                                                            else
-                                                            {
-                                                                    <div class="bg-light rounded-circle me-2 d-flex align-items-center justify-content-center"
-                                                                        style="width: 30px; height: 30px;">
-                                                                        <i class="bi bi-person"></i>
-                                                                    </div>
-                                                            }
-                                                            <small class="text-muted">
-                                                                @article.PublishedDate.ToString("MMM d, yyyy")
-                                                                <span>by @article.Author.FirstName @article.Author.LastName</span>
-                                                            </small>
-                                                    }
-                                                    else
-                                                    {
-                                                            <small class="text-muted">
-                                                                @article.PublishedDate.ToString("MMM d, yyyy")
-                                                            </small>
-                                                    }
-                                                </div>
-                                                <a asp-controller="Articles" asp-action="Details" asp-route-id="@article.Id"
-                                                    class="btn btn-sm btn-outline-primary">Read more</a>
-                                            </div>
-                                        </div>
                                     </div>
+                                    <a asp-controller="Articles" asp-action="Details" asp-route-id="@article.Id"
+                                        class="btn btn-sm btn-outline-primary">Read Article</a>
                                 </div>
                             </div>
                         </div>
                     </div>
-            }
-        </div>
+                </div>
+            </div>
+        }
+    </div>
 }
+
+<style>
+    .newspaper-alert {
+        font-family: 'Old Standard TT', serif;
+        padding: 1.5rem;
+        border: 1px solid var(--newspaper-border);
+        background-color: var(--newspaper-bg);
+        margin-bottom: 1.5rem;
+    }
+
+    .newspaper-search-results {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .newspaper-search-item {
+        border: 1px solid var(--newspaper-border);
+        background-color: white;
+    }
+
+    .newspaper-search-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .newspaper-search-placeholder {
+        height: 100%;
+        min-height: 200px;
+        background-color: var(--newspaper-bg);
+        color: var(--newspaper-muted);
+    }
+
+    .newspaper-search-content {
+        padding: 1.5rem;
+    }
+
+    .newspaper-search-title {
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 1.5rem;
+        line-height: 1.3;
+    }
+
+    .newspaper-search-footer {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--newspaper-border);
+    }
+</style>
