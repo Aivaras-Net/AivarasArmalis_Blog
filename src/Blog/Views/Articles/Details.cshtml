@@ -221,6 +221,9 @@
 }
 <partial name="_ModalPartial" />
 
+<partial name="_ReportModalPartial" />
+<partial name="_BlockCommentModalPartial" />
+
 @section Scripts {
     <script>
         function shareArticle() {
@@ -394,6 +397,37 @@
                         $button.removeClass('active');
                     }
                 });
+            });
+            
+            $(document).on('click', '.report-button', function() {
+                var commentId = $(this).data('comment-id');
+                var commentText = $(this).data('comment-text');
+                var authorName = $(this).data('author-name');
+                
+                $('#reportCommentId').val(commentId);
+                $('.comment-preview .comment-author-name').text(authorName);
+                $('.comment-preview .comment-text').text(commentText);
+                
+                $('#reportReasonSelect').val('');
+                $('#reportReasonText').hide().val('');
+                
+                var reportModal = new bootstrap.Modal(document.getElementById('reportCommentModal'));
+                reportModal.show();
+            });
+            
+            $(document).on('click', '.block-button', function() {
+                var commentId = $(this).data('comment-id');
+                var commentText = $(this).data('comment-text');
+                var authorName = $(this).data('author-name');
+                
+                $('#blockCommentId').val(commentId);
+                $('.comment-preview .comment-author-name').text(authorName);
+                $('.comment-preview .comment-text').text(commentText);
+                
+                $('#blockReason').val('');
+                
+                var blockModal = new bootstrap.Modal(document.getElementById('blockCommentModal'));
+                blockModal.show();
             });
         });
         

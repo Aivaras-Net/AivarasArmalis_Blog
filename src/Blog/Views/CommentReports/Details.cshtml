@@ -1,0 +1,483 @@
+@model Blog.Models.CommentReport
+@{
+    ViewData["Title"] = "Report Details";
+}
+
+<div class="container py-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index">Reports</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Report #@Model.Id</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-8">
+            <h1 class="mb-4">Report Details</h1>
+            
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>
+                        <strong>Report #@Model.Id</strong>
+                    </span>
+                    <span class="badge @(Model.Status == Blog.Models.ReportStatus.Pending ? "bg-warning" :
+                               Model.Status == Blog.Models.ReportStatus.Reviewed ? "bg-info" :
+                               Model.Status == Blog.Models.ReportStatus.Rejected ? "bg-secondary" :
+                               Model.Status == Blog.Models.ReportStatus.ActionTaken ? "bg-danger" : "bg-secondary")">
+                        @Model.Status
+                    </span>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Reported Comment</h5>
+                    
+                    @if (Model.Comment != null)
+                    {
+                                <div class="card mb-4 @(Model.Comment.IsBlocked ? "border-danger" : "")">
+                                    <div class="card-body">
+                                        @if (Model.Comment.IsBlocked)
+                                        {
+                                                    <div class="alert alert-danger mb-3">
+                                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                                        <strong>This comment has been blocked.</strong>
+                                                        @if (!string.IsNullOrEmpty(Model.Comment.BlockReason))
+                                                        {
+                                                                    <div>Reason: @Model.Comment.BlockReason</div>
+                                                        }
+                                                    </div>
+                                        }
+                                
+                                        <div class="d-flex mb-3">
+                                            @if (Model.Comment.Author != null)
+                                            {
+                                                        <div class="flex-shrink-0">
+                                                            @if (!string.IsNullOrEmpty(Model.Comment.Author.ProfilePicturePath))
+                                                            {
+                                                                        <img src="/@Model.Comment.Author.ProfilePicturePath" alt="@Model.Comment.Author.FirstName @Model.Comment.Author.LastName"
+                                                                            class="rounded-circle" width="40" height="40" style="object-fit: cover;">
+                                                            }
+                                                            else
+                                                            {
+                                                                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center"
+                                                                            style="width: 40px; height: 40px;">
+                                                                            <i class="bi bi-person"></i>
+                                                                        </div>
+                                                            }
+                                                        </div>
+                                                        <div class="ms-3">
+                                                            <div class="fw-bold">@Model.Comment.Author.FirstName @Model.Comment.Author.LastName</div>
+                                                            <small class="text-muted">
+                                                                @Model.Comment.CreatedAt.ToString("MMM d, yyyy h:mm tt")
+                                                                @if (Model.Comment.UpdatedAt.HasValue)
+                                                                {
+                                                                            <span class="ms-2">(Edited)</span>
+                                                                }
+                                                            </small>
+                                                        </div>
+                                            }
+                                        </div>
+                                
+                                        <p class="card-text">@Model.Comment.Content</p>
+                                
+                                        <a href="@Url.Action("Details", "Articles", new { id = Model.Comment.ArticleId })" 
+                                           class="btn btn-sm btn-outline-primary" target="_blank">
+                                            <i class="bi bi-box-arrow-up-right me-1"></i>
+                                            View in Article
+                                        </a>
+                                    </div>
+                                </div>
+                    }
+                    else
+                    {
+                                <div class="alert alert-warning">
+                                    This comment has been deleted or does not exist.
+                                </div>
+                    }
+                    
+                    <h5 class="card-title mt-4">Report Information</h5>
+                    <dl class="row">
+                        <dt class="col-sm-3">Reported By</dt>
+                        <dd class="col-sm-9">
+                            @if (Model.Reporter != null)
+                            {
+                                        @($"{Model.Reporter.FirstName} {Model.Reporter.LastName}")
+                            }
+                            else
+                            {
+                                        <span class="text-muted">Unknown</span>
+                            }
+                        </dd>
+                        
+                        <dt class="col-sm-3">Date Reported</dt>
+                        <dd class="col-sm-9">@Model.CreatedAt.ToString("MMM d, yyyy h:mm tt")</dd>
+                        
+                        <dt class="col-sm-3">Reason</dt>
+                        <dd class="col-sm-9">@Model.Reason</dd>
+                        
+                        @if (!string.IsNullOrEmpty(Model.ReportDetails))
+                        {
+                            <dt class="col-sm-3">Additional Details</dt>
+                            <dd class="col-sm-9">@Model.ReportDetails</dd>
+                        }
+                        
+                        @if (Model.Status != Blog.Models.ReportStatus.Pending)
+                        {
+                                    <dt class="col-sm-3">Reviewed By</dt>
+                                    <dd class="col-sm-9">
+                                        @if (Model.Reviewer != null)
+                                        {
+                                                    @($"{Model.Reviewer.FirstName} {Model.Reviewer.LastName}")
+                                        }
+                                        else
+                                        {
+                                                    <span class="text-muted">Unknown</span>
+                                        }
+                                    </dd>
+                            
+                                    <dt class="col-sm-3">Reviewed On</dt>
+                                    <dd class="col-sm-9">
+                                        @if (Model.ReviewedAt.HasValue)
+                                        {
+                                                    @Model.ReviewedAt.Value.ToString("MMM d, yyyy h:mm tt")
+                                        }
+                                        else
+                                        {
+                                                    <span class="text-muted">N/A</span>
+                                        }
+                                    </dd>
+                            
+                                    <dt class="col-sm-3">Review Notes</dt>
+                                    <dd class="col-sm-9">
+                                        @if (!string.IsNullOrEmpty(Model.ReviewNotes))
+                                        {
+                                                    @Model.ReviewNotes
+                                        }
+                                        else
+                                        {
+                                                    <span class="text-muted">No notes provided</span>
+                                        }
+                                    </dd>
+                        }
+                    </dl>
+                </div>
+                <div class="card-footer">
+                    @if (Model.Status == Blog.Models.ReportStatus.Pending && Model.Comment != null)
+                    {
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <button type="button" class="btn btn-outline-secondary review-button"
+                                                data-report-id="@Model.Id" data-status="Rejected">
+                                            <i class="bi bi-x-circle me-1"></i> Reject Report
+                                        </button>
+                                
+                                        <button type="button" class="btn btn-outline-primary review-button" 
+                                                data-report-id="@Model.Id" data-status="Reviewed">
+                                            <i class="bi bi-check-circle me-1"></i> Mark as Reviewed
+                                        </button>
+                                    </div>
+                            
+                                    @if (!Model.Comment.IsBlocked)
+                                    {
+                                                <button type="button" class="btn btn-danger block-button"
+                                                        data-comment-id="@Model.Comment.Id" 
+                                                        data-comment-text="@(Model.Comment.Content.Length > 100 ? Model.Comment.Content.Substring(0, 100) + "..." : Model.Comment.Content)"
+                                                        data-author-name="@(Model.Comment?.Author != null ? $"{Model.Comment.Author.FirstName} {Model.Comment.Author.LastName}" : "Unknown")">
+                                                    <i class="bi bi-ban me-1"></i> Block Comment
+                                                </button>
+                                    }
+                                    else
+                                    {
+                                                <form asp-controller="CommentReports" asp-action="UnblockComment" method="post" class="d-inline unblock-form"
+                                                      data-comment-id="@Model.Comment.Id">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="commentId" value="@Model.Comment.Id" />
+                                                    <button type="submit" class="btn btn-outline-success">
+                                                        <i class="bi bi-check-circle me-1"></i> Unblock Comment
+                                                    </button>
+                                                </form>
+                                    }
+                                </div>
+                    }
+                    else
+                    {
+                                <a asp-action="Index" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i> Back to Reports
+                                </a>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <strong>Report Timeline</strong>
+                </div>
+                <div class="card-body">
+                    <ul class="timeline">
+                        <li class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h5 class="timeline-title">Report Created</h5>
+                                <p class="timeline-date">
+                                    <i class="bi bi-calendar3 me-1"></i> 
+                                    @Model.CreatedAt.ToString("MMM d, yyyy h:mm tt")
+                                </p>
+                                <p>
+                                    @if (Model.Reporter != null)
+                                    {
+                                                <span>@($"{Model.Reporter.FirstName} {Model.Reporter.LastName}")</span>
+                                    }
+                                    else
+                                    {
+                                                <span class="text-muted">Unknown user</span>
+                                    }
+                                    reported this comment
+                                </p>
+                            </div>
+                        </li>
+                        
+                        @if (Model.Status != Blog.Models.ReportStatus.Pending)
+                        {
+                                    <li class="timeline-item">
+                                        <div class="timeline-marker 
+                                             @(Model.Status == Blog.Models.ReportStatus.Rejected ? "bg-secondary" :
+                                                                                                                                                                        Model.Status == Blog.Models.ReportStatus.Reviewed ? "bg-info" : "bg-danger")"></div>
+                                        <div class="timeline-content">
+                                            <h5 class="timeline-title">
+                                                @(Model.Status == Blog.Models.ReportStatus.Rejected ? "Report Rejected" :
+                                                                                                                                                                                    Model.Status == Blog.Models.ReportStatus.Reviewed ? "Report Reviewed" : "Action Taken")
+                                    </h5>
+                                    <p class="timeline-date">
+                                        <i class="bi bi-calendar3 me-1"></i>
+                                        @if (Model.ReviewedAt.HasValue)
+                                                {
+                                                            @Model.ReviewedAt.Value.ToString("MMM d, yyyy h:mm tt")
+                                                }
+                                                else
+                                                {
+                                                            <span>Unknown date</span>
+                                                }
+                                            </p>
+                                            <p>
+                                                @if (Model.Reviewer != null)
+                                                {
+                                                            <span>@($"{Model.Reviewer.FirstName} {Model.Reviewer.LastName}")</span>
+                                                }
+                                                else
+                                                {
+                                                            <span class="text-muted">Unknown admin</span>
+                                                }
+                                                reviewed this report
+                                            </p>
+                                            @if (!string.IsNullOrEmpty(Model.ReviewNotes))
+                                            {
+                                                        <div class="card bg-light">
+                                                            <div class="card-body py-2 px-3">
+                                                                <small>@Model.ReviewNotes</small>
+                                                            </div>
+                                                        </div>
+                                            }
+                                        </div>
+                                    </li>
+                            
+                                    @if (Model.Comment?.IsBlocked == true && Model.Status == Blog.Models.ReportStatus.ActionTaken)
+                                    {
+                                                <li class="timeline-item">
+                                                    <div class="timeline-marker bg-danger"></div>
+                                                    <div class="timeline-content">
+                                                        <h5 class="timeline-title">Comment Blocked</h5>
+                                                        <p class="timeline-date">
+                                                            <i class="bi bi-calendar3 me-1"></i>
+                                                            @if (Model.Comment.BlockedAt.HasValue)
+                                                            {
+                                                                        @Model.Comment.BlockedAt.Value.ToString("MMM d, yyyy h:mm tt")
+                                                            }
+                                                            else
+                                                            {
+                                                                        <span>Unknown date</span>
+                                                            }
+                                                        </p>
+                                                        <p>
+                                                            @if (Model.Comment.BlockedBy != null)
+                                                            {
+                                                                        <span>@($"{Model.Comment.BlockedBy.FirstName} {Model.Comment.BlockedBy.LastName}")</span>
+                                                            }
+                                                            else
+                                                            {
+                                                                        <span class="text-muted">Unknown admin</span>
+                                                            }
+                                                            blocked this comment
+                                                        </p>
+                                                        @if (!string.IsNullOrEmpty(Model.Comment.BlockReason))
+                                                        {
+                                                                    <div class="card bg-light">
+                                                                        <div class="card-body py-2 px-3">
+                                                                            <small>@Model.Comment.BlockReason</small>
+                                                                        </div>
+                                                                    </div>
+                                                        }
+                                                    </div>
+                                                </li>
+                                    }
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<partial name="_BlockCommentModalPartial" />
+
+<div class="modal fade" id="reviewReportModal" tabindex="-1" aria-labelledby="reviewReportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reviewReportModalLabel">Review Report</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="Review" method="post" id="reviewReportForm">
+                <div class="modal-body">
+                    <input type="hidden" name="id" id="reviewReportId" value="" />
+                    <input type="hidden" name="status" id="reviewReportStatus" value="" />
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Review Notes (Optional):</label>
+                        <textarea name="notes" id="reviewReportNotes" class="form-control" 
+                                  rows="3" placeholder="Add any notes about this review..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Review</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timeline {
+        list-style-type: none;
+        position: relative;
+        padding-left: 1.5rem;
+        margin: 0;
+    }
+    
+    .timeline::before {
+        content: ' ';
+        position: absolute;
+        left: 0.75rem;
+        height: 100%;
+        width: 2px;
+        background-color: #e9ecef;
+        z-index: 0;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    
+    .timeline-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -1.5rem;
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        z-index: 1;
+    }
+    
+    .timeline-content {
+        padding-left: 0.5rem;
+    }
+    
+    .timeline-title {
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+    }
+    
+    .timeline-date {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+</style>
+
+@section Scripts {
+            <script>
+                $(document).ready(function() {
+                    $(document).on('click', '.review-button', function() {
+                        var reportId = $(this).data('report-id');
+                        var status = $(this).data('status');
+                
+                        $('#reviewReportId').val(reportId);
+                        $('#reviewReportStatus').val(status);
+                        $('#reviewReportNotes').val('');
+                
+                        $('#reviewReportModalLabel').text(status === 'Rejected' ? 'Reject Report' : 'Mark as Reviewed');
+                
+                        var reviewModal = new bootstrap.Modal(document.getElementById('reviewReportModal'));
+                        reviewModal.show();
+                    });
+                    
+                    $(document).on('click', '.block-button', function() {
+                        var commentId = $(this).data('comment-id');
+                        var commentText = $(this).data('comment-text');
+                        var authorName = $(this).data('author-name');
+                        
+                        $('#blockCommentId').val(commentId);
+                        $('.comment-author-name').text(authorName);
+                        $('.comment-text').text(commentText);
+                        
+                        var blockModal = new bootstrap.Modal(document.getElementById('blockCommentModal'));
+                        blockModal.show();
+                    });
+            
+                    $('#reviewReportForm').on('submit', function(e) {
+                        e.preventDefault();
+                
+                        var form = $(this);
+                
+                        $.ajax({
+                            url: form.attr('action'),
+                            type: 'POST',
+                            data: form.serialize(),
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            success: function(response) {
+                                $('#reviewReportModal').modal('hide');
+                                location.reload();
+                            },
+                            error: function(xhr, status, error) {
+                                var errorMessage = 'An error occurred. Please try again.';
+                        
+                                if (xhr && xhr.responseJSON && xhr.responseJSON.message) {
+                                    errorMessage = xhr.responseJSON.message;
+                                } else if (xhr && xhr.responseText) {
+                                    errorMessage = xhr.responseText;
+                                } else if (error) {
+                                    errorMessage = error;
+                                }
+                        
+                                var errorDiv = $('<div class="alert alert-danger"></div>').text(errorMessage);
+                                form.find('.modal-body').prepend(errorDiv);
+                        
+                                setTimeout(function() {
+                                    errorDiv.fadeOut(function() {
+                                        $(this).remove();
+                                    });
+                                }, 3000);
+                            }
+                        });
+                    });
+                });
+            </script>
+}

@@ -6,12 +6,12 @@ namespace Blog.Services
 {
     public interface ICommentService
     {
-        Task<List<Comment>> GetArticleCommentsAsync(int articleId);
+        Task<List<Comment>> GetArticleCommentsAsync(int articleId, bool includeBlocked = false);
         Task<Comment?> GetCommentByIdAsync(int id);
         Task<Comment?> CreateCommentAsync(Comment comment, string userId);
         Task<Comment?> UpdateCommentAsync(int id, string content, string userId, bool isAdmin);
         Task<bool> DeleteCommentAsync(int id, string userId, bool isAdmin);
-        Task<List<Comment>> GetRepliesAsync(int commentId);
+        Task<List<Comment>> GetRepliesAsync(int commentId, bool includeBlocked = false);
     }
 
     public class CommentService : ICommentService
@@ -30,15 +30,15 @@ namespace Blog.Services
             _logger = logger;
         }
 
-        public async Task<List<Comment>> GetArticleCommentsAsync(int articleId)
+        public async Task<List<Comment>> GetArticleCommentsAsync(int articleId, bool includeBlocked = false)
         {
-            return await _context.Comments
+            var query = _context.Comments
                 .Include(c => c.Author)
                 .Include(c => c.Replies)
                     .ThenInclude(r => r.Author)
-                .Where(c => c.ArticleId == articleId && c.ParentCommentId == null)
-                .OrderByDescending(c => c.CreatedAt)
-                .ToListAsync();
+                .Where(c => c.ArticleId == articleId && c.ParentCommentId == null);
+
+            return await query.OrderByDescending(c => c.CreatedAt).ToListAsync();
         }
 
         public async Task<Comment?> GetCommentByIdAsync(int id)
@@ -47,6 +47,7 @@ namespace Blog.Services
                 .Include(c => c.Author)
                 .Include(c => c.Replies)
                     .ThenInclude(r => r.Author)
+                .Include(c => c.BlockedBy)
                 .FirstOrDefaultAsync(c => c.Id == id);
         }
 
@@ -142,35 +143,37 @@ namespace Blog.Services
             }
         }
 
-        public async Task<List<Comment>> GetRepliesAsync(int commentId)
+        public async Task<List<Comment>> GetRepliesAsync(int commentId, bool includeBlocked = false)
         {
-            var replies = await _context.Comments
+            var query = _context.Comments
                 .Include(c => c.Author)
-                .Where(c => c.ParentCommentId == commentId)
-                .OrderBy(c => c.CreatedAt)
-                .ToListAsync();
+                .Where(c => c.ParentCommentId == commentId);
+
+
+            var replies = await query.OrderBy(c => c.CreatedAt).ToListAsync();
 
             foreach (var reply in replies)
             {
-                await LoadNestedRepliesAsync(reply);
+                await LoadNestedRepliesAsync(reply, true);
             }
 
             return replies;
         }
 
-        private async Task LoadNestedRepliesAsync(Comment comment)
+        private async Task LoadNestedRepliesAsync(Comment comment, bool includeBlocked = false)
         {
-            var replies = await _context.Comments
+            var query = _context.Comments
                 .Include(c => c.Author)
-                .Where(c => c.ParentCommentId == comment.Id)
-                .OrderBy(c => c.CreatedAt)
-                .ToListAsync();
+                .Where(c => c.ParentCommentId == comment.Id);
+
+
+            var replies = await query.OrderBy(c => c.CreatedAt).ToListAsync();
 
             comment.Replies = replies;
 
             foreach (var reply in replies)
             {
-                await LoadNestedRepliesAsync(reply);
+                await LoadNestedRepliesAsync(reply, true);
             }
         }
     }

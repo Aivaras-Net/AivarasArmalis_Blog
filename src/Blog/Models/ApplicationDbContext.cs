@@ -13,6 +13,7 @@ namespace Blog.Models
         public DbSet<Article> Articles { get; set; }
         public DbSet<Vote> Votes { get; set; }
         public DbSet<Comment> Comments { get; set; }
+        public DbSet<CommentReport> CommentReports { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
@@ -51,6 +52,34 @@ namespace Blog.Models
                 .WithMany(c => c.Replies)
                 .HasForeignKey(c => c.ParentCommentId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<Comment>()
+                .HasOne(c => c.BlockedBy)
+                .WithMany()
+                .HasForeignKey(c => c.BlockedById)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<CommentReport>()
+                .HasOne(r => r.Comment)
+                .WithMany(c => c.Reports)
+                .HasForeignKey(r => r.CommentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.Entity<CommentReport>()
+                .HasOne(r => r.Reporter)
+                .WithMany()
+                .HasForeignKey(r => r.ReporterId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<CommentReport>()
+                .HasOne(r => r.Reviewer)
+                .WithMany()
+                .HasForeignKey(r => r.ReviewerId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            builder.Entity<CommentReport>()
+                .HasIndex(r => new { r.ReporterId, r.CommentId })
+                .IsUnique();
         }
     }
 }

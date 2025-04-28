@@ -29,6 +29,32 @@
                             <a class="nav-link text-dark" asp-area="" asp-controller="Articles" asp-action="Index">All
                                 Articles</a>
                         </li>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdown" role="button"
+                                    data-bs-toggle="dropdown" aria-expanded="false">
+                                    Admin
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Roles" asp-action="Index">
+                                            <i class="bi bi-people me-2"></i>Manage Roles
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="CommentReports" asp-action="Index">
+                                            <i class="bi bi-flag me-2"></i>Comment Reports
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="CommentReports" asp-action="Pending">
+                                            <i class="bi bi-exclamation-circle me-2"></i>Pending Reports
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
                     </ul>
                     <partial name="_LoginPartial" />
                 </div>

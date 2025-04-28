@@ -99,6 +99,17 @@ namespace Blog.Controllers
                 return BadRequest("Comment content cannot be empty");
             }
 
+            var comment = await _commentService.GetCommentByIdAsync(id);
+            if (comment == null)
+            {
+                return NotFound("Comment not found");
+            }
+
+            if (comment.IsBlocked && !User.IsInRole("Admin"))
+            {
+                return BadRequest("This comment has been blocked and cannot be edited");
+            }
+
             var userId = _userManager.GetUserId(User);
             var isAdmin = User.IsInRole("Admin");
 
@@ -126,6 +137,11 @@ namespace Blog.Controllers
                 return NotFound("Comment not found");
             }
 
+            if (comment.IsBlocked && !User.IsInRole("Admin"))
+            {
+                return BadRequest("This comment has been blocked and can only be deleted by an administrator");
+            }
+
             var userId = _userManager.GetUserId(User);
             var isAdmin = User.IsInRole("Admin");
 
@@ -147,7 +163,8 @@ namespace Blog.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetReplies(int commentId)
         {
-            var replies = await _commentService.GetRepliesAsync(commentId);
+            bool includeBlocked = User.IsInRole("Admin");
+            var replies = await _commentService.GetRepliesAsync(commentId, includeBlocked);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
