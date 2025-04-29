@@ -32,7 +32,7 @@ namespace Blog.Controllers
         {
             if (string.IsNullOrWhiteSpace(reason))
             {
-                return BadRequest("Report reason cannot be empty");
+                return BadRequest(WebConstants.CommentReportReasonEmpty);
             }
 
             var userId = _userManager.GetUserId(User);
@@ -40,18 +40,18 @@ namespace Blog.Controllers
             bool hasReported = await _reportService.HasUserReportedCommentAsync(commentId, userId);
             if (hasReported)
             {
-                return BadRequest("You have already reported this comment");
+                return BadRequest(WebConstants.CommentAlreadyReported);
             }
 
             var result = await _reportService.CreateReportAsync(commentId, reason, reportDetails, userId);
             if (result == null)
             {
-                return StatusCode(500, "Failed to report comment");
+                return StatusCode(500, WebConstants.CommentReportError);
             }
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return Json(new { success = true, message = "Comment reported successfully" });
+                return Json(new { success = true, message = WebConstants.CommentReportSuccess });
             }
 
             return RedirectToAction("Details", "Articles", new { id = result.Comment.ArticleId });
@@ -95,12 +95,12 @@ namespace Blog.Controllers
 
             if (result == null)
             {
-                return NotFound("Report not found");
+                return NotFound(WebConstants.NotFound);
             }
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return Json(new { success = true, message = "Report reviewed successfully" });
+                return Json(new { success = true, message = WebConstants.CommentReportReviewed });
             }
 
             return RedirectToAction("Details", new { id = result.Id });
@@ -112,7 +112,7 @@ namespace Blog.Controllers
         {
             if (string.IsNullOrWhiteSpace(reason))
             {
-                return BadRequest("Block reason cannot be empty");
+                return BadRequest(WebConstants.CommentReportReasonEmpty);
             }
 
             var userId = _userManager.GetUserId(User);
@@ -120,12 +120,12 @@ namespace Blog.Controllers
 
             if (result == null)
             {
-                return NotFound("Comment not found");
+                return NotFound(WebConstants.CommentNotFound);
             }
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return Json(new { success = true, message = "Comment blocked successfully" });
+                return Json(new { success = true, message = WebConstants.CommentBlockSuccess });
             }
 
             return RedirectToAction("Details", "Articles", new { id = result.ArticleId });
@@ -140,12 +140,12 @@ namespace Blog.Controllers
 
             if (result == null)
             {
-                return NotFound("Comment not found");
+                return NotFound(WebConstants.CommentNotFound);
             }
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return Json(new { success = true, message = "Comment unblocked successfully" });
+                return Json(new { success = true, message = WebConstants.CommentUnblocked });
             }
 
             return RedirectToAction("Details", "Articles", new { id = result.ArticleId });

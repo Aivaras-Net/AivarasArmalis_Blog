@@ -19,6 +19,24 @@ namespace Blog.Models
         public static string ArticleVoteError = "Failed to vote on the article";
         public static string ArticleRemoveVoteError = "Failed to remove vote from the article";
 
+        public static string CommentReportReasonEmpty = "Report reason cannot be empty";
+        public static string CommentReportSuccess = "Comment reported successfully";
+        public static string CommentReportError = "An error occurred while reporting the comment";
+        public static string CommentContentEmpty = "Comment content cannot be empty";
+        public static string CommentCreationError = "An error occurred while creating the comment";
+        public static string CommentUpdateError = "Comment not found or you don't have permission to edit it";
+        public static string CommentDeleteSuccess = "Comment deleted successfully";
+        public static string CommentDeleteError = "An error occurred while deleting the comment";
+        public static string CommentNotFound = "Comment not found";
+        public static string CommentAlreadyReported = "You have already reported this comment";
+        public static string CommentReportReviewed = "Report reviewed successfully";
+        public static string CommentBlocked = "This comment has been blocked and cannot be edited";
+        public static string CommentBlockedAdminOnly = "This comment has been blocked and can only be deleted by an administrator";
+        public static string CommentUnblocked = "Comment unblocked successfully";
+        public static string CommentBlockSuccess = "Comment blocked successfully";
+
+        public static string SearchTermRequired = "Search term is required";
+
         public static string AdminRoleProtected = "You cannot remove your own Admin role. Other roles updated successfully.";
         public static string RolesUpdated = "Roles updated successfully.";
         public static string RolesUpdateFailed = "Failed to update user roles.";

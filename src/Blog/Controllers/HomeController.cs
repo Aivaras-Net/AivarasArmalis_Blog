@@ -1,8 +1,8 @@
 using Blog.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using Blog.Services;
 using Microsoft.EntityFrameworkCore;
+using Blog.Services.Articles.Interfaces;
 
 namespace Blog.Controllers
 {
@@ -61,7 +61,7 @@ namespace Blog.Controllers
             {
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
-                    return Json(new { success = false, message = "Search term is required" });
+                    return Json(new { success = false, message = WebConstants.SearchTermRequired });
                 }
                 return RedirectToAction(nameof(Index));
             }

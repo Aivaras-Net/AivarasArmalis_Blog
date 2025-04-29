@@ -1,5 +1,6 @@
 using Blog.Models;
 using Blog.Repositories;
+using Blog.Services.Articles.Interfaces;
 
 namespace Blog.Services.Articles
 {
