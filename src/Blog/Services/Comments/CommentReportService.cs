@@ -2,7 +2,7 @@ using Blog.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
-namespace Blog.Services
+namespace Blog.Services.Comments
 {
     public interface ICommentReportService
     {

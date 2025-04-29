@@ -1,7 +1,8 @@
 using Blog.Models;
+using Blog.Repositories;
 
 
-namespace Blog.Services
+namespace Blog.Services.Articles
 {
     /// <summary>
     /// Implementation of article writing operations

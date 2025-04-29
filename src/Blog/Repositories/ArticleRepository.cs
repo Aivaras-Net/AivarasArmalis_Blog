@@ -1,7 +1,7 @@
 using Blog.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace Blog.Services
+namespace Blog.Repositories
 {
     /// <summary>
     /// Repository interface for article data access

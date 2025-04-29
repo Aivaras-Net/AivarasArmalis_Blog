@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Blog.Models;
 using Blog.Services;
+using Blog.Services.Comments.Interfaces;
 
 namespace Blog.Controllers
 {

@@ -1,7 +1,7 @@
 using Blog.Models;
 using Blog.Models.Dtos;
 
-namespace Blog.Services
+namespace Blog.Services.Articles
 {
     /// <summary>
     /// Interface for mapping between article entities and DTOs

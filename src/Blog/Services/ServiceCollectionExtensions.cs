@@ -1,3 +1,8 @@
+using Blog.Repositories;
+using Blog.Services.Articles;
+using Blog.Services.Comments;
+using Blog.Services.Comments.Interfaces;
+
 namespace Blog.Services
 {
     /// <summary>
@@ -27,6 +32,21 @@ namespace Blog.Services
         public static IServiceCollection AddValidationServices(this IServiceCollection services)
         {
             services.AddScoped<IValidationService, ValidationService>();
+            return services;
+        }
+
+        /// <summary>
+        /// Registers all comment-related services
+        /// </summary>
+        public static IServiceCollection AddCommentServices(this IServiceCollection services)
+        {
+            services.AddScoped<ICommentRepository, CommentRepository>();
+
+            services.AddScoped<ICommentReader, CommentReader>();
+            services.AddScoped<ICommentManager, CommentManager>();
+
+            services.AddScoped<ICommentService, CommentService>();
+
             return services;
         }
     }
