@@ -28,7 +28,7 @@
     <div class="replies mt-2">
         @foreach (var reply in Model)
         {
-            <div class="ms-4 border-start border-2 ps-2 mb-2">
+            <div class="reply-item">
                 <partial name="_CommentPartial" model="reply" />
 
                 @if (reply.Replies != null && reply.Replies.Any())
@@ -43,5 +43,5 @@
 }
 else
 {
-    <div class="text-muted small ms-4 mt-2">No replies yet</div>
+    <div class="text-muted small mt-2">No replies yet</div>
 }
