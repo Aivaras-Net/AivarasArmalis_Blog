@@ -11,92 +11,173 @@
     var isCritic = User.IsInRole("Critic");
 }
 
-<div class="container py-5">
+<div class="container py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="display-4">All Articles</h1>
+        <div class="newspaper-section-heading">
+            <h1>Latest Articles</h1>
+            <div class="newspaper-section-line"></div>
+        </div>
         @if (isWriterOrAdmin)
         {
             <a asp-action="Create" class="btn btn-primary">
-                <i class="bi bi-plus-lg me-1"></i> Write New Article
+                <i class="bi bi-plus-lg me-1"></i> Submit New Article
             </a>
         }
     </div>
 
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
-        @foreach (var article in Model)
+    <div class="row g-4">
+        @{
+            var featuredArticle = Model.FirstOrDefault();
+            var remainingArticles = Model.Skip(1);
+        }
+
+        @if (featuredArticle != null)
         {
-            <div class="col">
-                <div class="card h-100 shadow-sm border-0">
+            <div class="col-12 mb-4">
+                <div class="card newspaper-featured-article">
+                    <div class="row g-0">
+                        <div class="col-md-7">
+                            @if (!string.IsNullOrEmpty(featuredArticle.ImageUrl))
+                            {
+                                <img src="@featuredArticle.ImageUrl" class="card-img-top h-100" alt="@featuredArticle.Title"
+                                    style="object-fit: cover;">
+                            }
+                            else
+                            {
+                                <div class="bg-light d-flex justify-content-center align-items-center h-100" style="min-height: 300px;">
+                                    <i class="bi bi-journal-text display-1 text-muted"></i>
+                                </div>
+                            }
+                        </div>
+                        <div class="col-md-5">
+                            <div class="card-body h-100 d-flex flex-column">
+                                <div class="mb-2">
+                                    <span class="newspaper-featured-label">Featured Story</span>
+                                </div>
+                                <h2 class="card-title newspaper-headline">@featuredArticle.Title</h2>
+                                
+                                @if (!string.IsNullOrEmpty(featuredArticle.Summary))
+                                {
+                                    <p class="card-text newspaper-summary">@featuredArticle.Summary</p>
+                                }
+                                else
+                                {
+                                    <p class="card-text newspaper-summary fst-italic">No summary provided</p>
+                                }
+                                
+                                <div class="d-flex justify-content-between align-items-center mt-auto">
+                                    <div class="d-flex align-items-center">
+                                        @if (featuredArticle.Author != null)
+                                        {
+                                            @if (!string.IsNullOrEmpty(featuredArticle.Author.ProfilePicturePath))
+                                            {
+                                                <img src="/@featuredArticle.Author.ProfilePicturePath"
+                                                    alt="@featuredArticle.Author.FirstName @featuredArticle.Author.LastName" class="rounded-circle me-2"
+                                                    style="width: 30px; height: 30px; object-fit: cover;">
+                                            }
+                                            else
+                                            {
+                                                <div class="newspaper-author-initials me-2 d-flex align-items-center justify-content-center">
+                                                    <span>@(featuredArticle.Author.FirstName?.Substring(0, 1))@(featuredArticle.Author.LastName?.Substring(0, 1))</span>
+                                                </div>
+                                            }
+                                            <span class="newspaper-byline">
+                                                By @featuredArticle.Author.FirstName @featuredArticle.Author.LastName<br>
+                                                <span class="newspaper-date">@featuredArticle.PublishedDate.ToString("MMM d, yyyy")</span>
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="newspaper-date">
+                                                @featuredArticle.PublishedDate.ToString("MMM d, yyyy")
+                                            </span>
+                                        }
+                                    </div>
+                                    
+                                    <div class="newspaper-score">
+                                        <span class="@(featuredArticle.VoteScore > 0 ? "positive" : featuredArticle.VoteScore < 0 ? "negative" : "neutral")">
+                                            @featuredArticle.VoteScore
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <a asp-action="Details" asp-route-id="@featuredArticle.Id"
+                                        class="btn btn-outline-primary w-100">Continue Reading</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="col-12">
+            <div class="newspaper-divider mb-4">
+                <span>More Stories</span>
+            </div>
+        </div>
+
+        @foreach (var article in remainingArticles)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 newspaper-article-card">
                     @if (!string.IsNullOrEmpty(article.ImageUrl))
                     {
                         <img src="@article.ImageUrl" class="card-img-top" alt="@article.Title"
-                            style="height: 200px; object-fit: cover;">
+                            style="height: 180px; object-fit: cover;">
                     }
                     else
                     {
-                        <div class="bg-light text-center p-5" style="height: 200px;">
+                        <div class="newspaper-placeholder d-flex justify-content-center align-items-center" style="height: 180px;">
                             <i class="bi bi-journal-text display-4 text-muted"></i>
                         </div>
                     }
                     <div class="card-body">
-                        <!-- Vote Score Badge -->
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h5 class="card-title mb-0">@article.Title</h5>
-                            <span
-                                class="badge bg-@(article.VoteScore > 0 ? "success" : article.VoteScore < 0 ? "danger" : "secondary") rounded-pill">
-                                @article.VoteScore
-                            </span>
+                            <h3 class="card-title">@article.Title</h3>
+                            <div class="newspaper-score">
+                                <span class="@(article.VoteScore > 0 ? "positive" : article.VoteScore < 0 ? "negative" : "neutral")">
+                                    @article.VoteScore
+                                </span>
+                            </div>
                         </div>
 
-                        <!-- Vote Count Display -->
-                        <div class="mb-3 small text-muted">
-                            <i class="bi bi-plus-lg text-success me-1"></i> @article.UpvoteCount
-                            <i class="bi bi-dash-lg text-danger mx-1"></i> @article.DownvoteCount
+                        <div class="newspaper-stats small mb-3">
+                            <i class="bi bi-hand-thumbs-up text-success me-1"></i> @article.UpvoteCount
+                            <i class="bi bi-hand-thumbs-down text-danger mx-1"></i> @article.DownvoteCount
                         </div>
 
                         @if (!string.IsNullOrEmpty(article.Summary))
                         {
-                            <p class="card-text text-muted">@article.Summary</p>
+                            <p class="card-text newspaper-summary">@article.Summary</p>
                         }
                         else
                         {
-                            <p class="card-text text-muted fst-italic">No summary provided</p>
+                            <p class="card-text newspaper-summary fst-italic">No summary provided</p>
                         }
                     </div>
-                    <div class="card-footer bg-transparent border-0">
+                    <div class="card-footer">
                         <div class="d-flex justify-content-between align-items-center">
                             <div class="d-flex align-items-center">
                                 @if (article.Author != null)
                                 {
-                                    @if (!string.IsNullOrEmpty(article.Author.ProfilePicturePath))
-                                    {
-                                        <img src="/@article.Author.ProfilePicturePath"
-                                            alt="@article.Author.FirstName @article.Author.LastName" class="rounded-circle me-2"
-                                            style="width: 30px; height: 30px; object-fit: cover;">
-                                    }
-                                    else
-                                    {
-                                        <div class="bg-light rounded-circle me-2 d-flex align-items-center justify-content-center"
-                                            style="width: 30px; height: 30px;">
-                                            <i class="bi bi-person"></i>
-                                        </div>
-                                    }
-                                    <small class="text-muted">
-                                        @article.PublishedDate.ToString("MMM d, yyyy")
-                                        <span>by @article.Author.FirstName @article.Author.LastName</span>
-                                    </small>
+                                    <span class="newspaper-byline small">
+                                        @article.PublishedDate.ToString("MMM d, yyyy")<br>
+                                        By @article.Author.FirstName @article.Author.LastName
+                                    </span>
                                 }
                                 else
                                 {
-                                    <small class="text-muted">
+                                    <span class="newspaper-date small">
                                         @article.PublishedDate.ToString("MMM d, yyyy")
-                                    </small>
+                                    </span>
                                 }
                             </div>
 
                             <div class="d-flex gap-2">
                                 <a asp-action="Details" asp-route-id="@article.Id"
-                                    class="btn btn-sm btn-outline-primary">Read</a>
+                                    class="btn btn-sm btn-outline-primary">Read Article</a>
 
                                 @if (isWriterOrAdmin && (User.IsInRole("Admin") || article.AuthorId == userId))
                                 {
@@ -122,3 +203,142 @@
         }
     </div>
 </div>
+
+<style>
+    .newspaper-section-heading {
+        position: relative;
+        margin-bottom: 1.5rem;
+    }
+    
+    .newspaper-section-heading h1 {
+        font-family: 'Playfair Display', serif;
+        font-weight: 900;
+        font-size: 2.2rem;
+        margin-bottom: 0.5rem;
+        display: inline-block;
+        background-color: white;
+        padding-right: 1rem;
+        position: relative;
+        z-index: 1;
+    }
+    
+    .newspaper-section-line {
+        border-top: 2px solid var(--newspaper-border);
+        margin-top: -1.5rem;
+    }
+    
+    .newspaper-featured-article {
+        border: 1px solid var(--newspaper-border);
+        border-radius: 0;
+    }
+    
+    .newspaper-featured-label {
+        font-family: 'Old Standard TT', serif;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+        font-weight: bold;
+        border-bottom: 2px solid var(--newspaper-accent);
+        padding-bottom: 0.2rem;
+        color: var(--newspaper-accent);
+    }
+    
+    .newspaper-headline {
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 1.8rem;
+        line-height: 1.3;
+    }
+    
+    .newspaper-summary {
+        font-family: 'Lora', serif;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+    
+    .newspaper-byline {
+        font-family: 'Old Standard TT', serif;
+        font-size: 0.85rem;
+        line-height: 1.3;
+    }
+    
+    .newspaper-date {
+        font-family: 'Old Standard TT', serif;
+        font-style: italic;
+        color: var(--newspaper-muted);
+        font-size: 0.85rem;
+    }
+    
+    .newspaper-score {
+        font-family: 'Old Standard TT', serif;
+        font-weight: bold;
+    }
+    
+    .newspaper-score .positive {
+        color: green;
+    }
+    
+    .newspaper-score .negative {
+        color: darkred;
+    }
+    
+    .newspaper-score .neutral {
+        color: var(--newspaper-muted);
+    }
+    
+    .newspaper-stats {
+        font-family: 'Old Standard TT', serif;
+        color: var(--newspaper-muted);
+    }
+    
+    .newspaper-article-card {
+        border: 1px solid var(--newspaper-border);
+        border-radius: 0;
+        transition: all 0.3s ease;
+    }
+    
+    .newspaper-article-card:hover {
+        border-color: var(--newspaper-accent);
+    }
+    
+    .newspaper-divider {
+        text-align: center;
+        margin: 1.5rem 0;
+        position: relative;
+    }
+    
+    .newspaper-divider:before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        border-top: 1px solid var(--newspaper-border);
+        z-index: -1;
+    }
+    
+    .newspaper-divider span {
+        background-color: white;
+        padding: 0 1rem;
+        font-family: 'Playfair Display', serif;
+        text-transform: uppercase;
+        font-size: 0.9rem;
+        letter-spacing: 2px;
+        color: var(--newspaper-accent);
+    }
+    
+    .newspaper-author-initials {
+        width: 30px;
+        height: 30px;
+        background-color: var(--newspaper-border);
+        color: var(--newspaper-text);
+        border-radius: 50%;
+        font-family: 'Old Standard TT', serif;
+        font-size: 0.8rem;
+    }
+    
+    .newspaper-placeholder {
+        background-color: #f9f7f1;
+        border-bottom: 1px solid var(--newspaper-border);
+    }
+</style>

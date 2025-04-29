@@ -1,4 +1,4 @@
-using Blog.Services;
+using Blog.Services.Comments.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Blog.ViewComponents

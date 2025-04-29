@@ -14,116 +14,166 @@
     var rootCommentId = isNestedReply ? Model.ParentCommentId.Value : Model.Id;
 }
 
-<div class="comment mb-3" id="comment-@Model.Id">
-    <div class="card border-0 shadow-sm">
-        <div class="card-body">
-            <div class="d-flex mb-3">
-                @if (Model.Author != null)
+<div class="comment @(Model.IsBlocked ? "comment-blocked" : "")" id="comment-@Model.Id">
+    <div class="comment-header">
+        @if (Model.Author != null)
+        {
+            <div class="flex-shrink-0">
+                @if (!string.IsNullOrEmpty(Model.Author.ProfilePicturePath))
                 {
-                    <div class="flex-shrink-0">
-                        @if (!string.IsNullOrEmpty(Model.Author.ProfilePicturePath))
-                        {
-                            <img src="/@Model.Author.ProfilePicturePath" alt="@Model.Author.FirstName @Model.Author.LastName"
-                                class="rounded-circle" width="40" height="40" style="object-fit: cover;">
-                        }
-                        else
-                        {
-                            <div class="bg-light rounded-circle d-flex align-items-center justify-content-center"
-                                style="width: 40px; height: 40px;">
-                                <i class="bi bi-person"></i>
-                            </div>
-                        }
-                    </div>
-                    <div class="ms-3">
-                        <div class="fw-bold">@Model.Author.FirstName @Model.Author.LastName</div>
-                        <small class="text-muted">
-                            @Model.CreatedAt.ToString("MMM d, yyyy h:mm tt")
-                            @if (Model.UpdatedAt.HasValue)
-                            {
-                                <span class="ms-2">(Edited)</span>
-                            }
-                        </small>
+                    <img src="/@Model.Author.ProfilePicturePath" alt="@Model.Author.FirstName @Model.Author.LastName"
+                        class="rounded-circle" width="32" height="32" style="object-fit: cover;">
+                }
+                else
+                {
+                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center"
+                        style="width: 32px; height: 32px;">
+                        <i class="bi bi-person"></i>
                     </div>
                 }
             </div>
-
-            <div class="comment-content" id="comment-content-@Model.Id">
-                <p class="mb-0">@Model.Content</p>
+            <div class="ms-2">
+                <div class="fw-bold" style="font-size: 0.9rem;">@Model.Author.FirstName @Model.Author.LastName</div>
+                <small class="text-muted" style="font-size: 0.8rem;">
+                    @Model.CreatedAt.ToString("MMM d, yyyy h:mm tt")
+                    @if (Model.UpdatedAt.HasValue)
+                    {
+                        <span class="ms-1 fst-italic">(Edited)</span>
+                    }
+                </small>
             </div>
+        }
+    </div>
 
-            @if (canEdit)
+    <div class="comment-content" id="comment-content-@Model.Id">
+        @if (Model.IsBlocked)
+        {
+            <div class="alert alert-warning mb-0 py-2"
+                style="background-color: rgba(0,0,0,0.03); border: none; border-left: 2px solid #ffc107;">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span class="text-muted fst-italic">This comment has been blocked by a moderator.</span>
+                @if (isAdmin && !string.IsNullOrEmpty(Model.BlockReason))
+                {
+                    <div class="mt-1 small">
+                        <strong>Reason:</strong> @Model.BlockReason
+                    </div>
+                }
+            </div>
+            @if (isAdmin)
             {
-                <div class="edit-form d-none mt-3" id="edit-form-@Model.Id">
-                    <form asp-controller="Comments" asp-action="Edit" method="post" data-ajax="true" data-ajax-method="post"
-                        data-ajax-success="handleEditSuccess" data-ajax-failure="handleAjaxError">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@Model.Id" />
-                        <div class="form-group">
-                            <textarea class="form-control" name="content" rows="3" required>@Model.Content</textarea>
-                        </div>
-                        <div class="mt-2">
-                            <button type="submit" class="btn btn-primary btn-sm">Save</button>
-                            <button type="button" class="btn btn-link btn-sm cancel-edit"
-                                data-comment-id="@Model.Id">Cancel</button>
-                        </div>
-                    </form>
+                <div class="mt-2 p-2 bg-light" style="border-left: 2px solid #6c757d;">
+                    <div class="small text-muted mb-1">Original content (visible to admins only):</div>
+                    <p class="mb-0 fst-italic">@Model.Content</p>
                 </div>
             }
+        }
+        else
+        {
+            <p class="mb-0">@Model.Content</p>
+        }
+    </div>
 
-            <div class="mt-3 d-flex">
-                @if (isCommentator)
-                {
-                    <button class="btn btn-link btn-sm reply-button p-0 text-decoration-none me-3"
-                        data-comment-id="@Model.Id" data-root-comment-id="@rootCommentId">
-                        <i class="bi bi-reply me-1"></i> Reply
-                    </button>
-                }
-
-                @if (canEdit)
-                {
-                    <button class="btn btn-link btn-sm edit-button p-0 text-decoration-none me-3"
-                        data-comment-id="@Model.Id">
-                        <i class="bi bi-pencil me-1"></i> Edit
-                    </button>
-
-                    <form asp-controller="Comments" asp-action="Delete" method="post" class="d-inline delete-form"
-                        data-comment-id="@Model.Id">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="id" value="@Model.Id" />
-                        <button type="submit" class="btn btn-link btn-sm text-danger p-0 text-decoration-none">
-                            <i class="bi bi-trash me-1"></i> Delete
-                        </button>
-                    </form>
-                }
-            </div>
-
-            <div class="reply-form mt-3 d-none" id="reply-form-@Model.Id">
-                @if (SignInManager.IsSignedIn(User) && isCommentator)
-                {
-                    <form asp-controller="Comments" asp-action="Create" method="post" data-ajax="true"
-                        data-ajax-method="post" data-ajax-success="handleReplySuccess" data-ajax-failure="handleAjaxError"
-                        data-ajax-mode="replace">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="articleId" value="@Model.ArticleId" />
-                        <input type="hidden" name="parentCommentId" value="@Model.Id" />
-                        <div class="form-group">
-                            <textarea class="form-control" name="content" rows="2" placeholder="Write a reply..."
-                                required></textarea>
-                        </div>
-                        <div class="mt-2">
-                            <button type="submit" class="btn btn-primary btn-sm">Submit</button>
-                            <button type="button" class="btn btn-link btn-sm cancel-reply"
-                                data-comment-id="@Model.Id">Cancel</button>
-                        </div>
-                    </form>
-                }
-            </div>
+    @if (canEdit && (!Model.IsBlocked || isAdmin))
+    {
+        <div class="edit-form d-none mt-3" id="edit-form-@Model.Id">
+            <form asp-controller="Comments" asp-action="Edit" method="post" data-ajax="true" data-ajax-method="post"
+                data-ajax-success="handleEditSuccess" data-ajax-failure="handleAjaxError">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <div class="form-group">
+                    <textarea class="form-control" name="content" rows="3" required>@Model.Content</textarea>
+                </div>
+                <div class="mt-2">
+                    <button type="submit" class="btn btn-sm btn-primary">Save</button>
+                    <button type="button" class="btn btn-link btn-sm cancel-edit"
+                        data-comment-id="@Model.Id">Cancel</button>
+                </div>
+            </form>
         </div>
+    }
+
+    <div class="mt-2 d-flex">
+        @if (isCommentator && !Model.IsBlocked)
+        {
+            <button class="btn btn-link btn-sm reply-button p-0 text-decoration-none me-3" data-comment-id="@Model.Id"
+                data-root-comment-id="@rootCommentId">
+                <i class="bi bi-reply me-1"></i> Reply
+            </button>
+        }
+
+        @if (canEdit && (!Model.IsBlocked || isAdmin))
+        {
+            <button class="btn btn-link btn-sm edit-button p-0 text-decoration-none me-3" data-comment-id="@Model.Id">
+                <i class="bi bi-pencil me-1"></i> Edit
+            </button>
+
+            <form asp-controller="Comments" asp-action="Delete" method="post" class="d-inline delete-form"
+                data-comment-id="@Model.Id">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn btn-link btn-sm text-danger p-0 text-decoration-none me-3">
+                    <i class="bi bi-trash me-1"></i> Delete
+                </button>
+            </form>
+        }
+
+        @if (SignInManager.IsSignedIn(User) && !Model.IsBlocked && userId != Model.AuthorId)
+        {
+            <button class="btn btn-link btn-sm report-button p-0 text-decoration-none text-warning"
+                data-comment-id="@Model.Id"
+                data-comment-text="@(Model.Content.Length > 100 ? Model.Content.Substring(0, 100) + "..." : Model.Content)"
+                data-author-name="@(Model.Author != null ? $"{Model.Author.FirstName} {Model.Author.LastName}" : "Unknown")">
+                <i class="bi bi-flag me-1"></i> Report
+            </button>
+        }
+
+        @if (isAdmin && Model.IsBlocked)
+        {
+            <form asp-controller="CommentReports" asp-action="UnblockComment" method="post" class="d-inline unblock-form"
+                data-comment-id="@Model.Id">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="commentId" value="@Model.Id" />
+                <button type="submit" class="btn btn-link btn-sm text-success p-0 text-decoration-none">
+                    <i class="bi bi-check-circle me-1"></i> Unblock
+                </button>
+            </form>
+        }
+
+        @if (isAdmin && !Model.IsBlocked)
+        {
+            <button class="btn btn-link btn-sm block-button p-0 text-decoration-none text-danger ms-auto"
+                data-comment-id="@Model.Id"
+                data-comment-text="@(Model.Content.Length > 100 ? Model.Content.Substring(0, 100) + "..." : Model.Content)"
+                data-author-name="@(Model.Author != null ? $"{Model.Author.FirstName} {Model.Author.LastName}" : "Unknown")">
+                <i class="bi bi-ban me-1"></i> Block
+            </button>
+        }
+    </div>
+
+    <div class="reply-form mt-3 d-none" id="reply-form-@Model.Id">
+        @if (SignInManager.IsSignedIn(User) && isCommentator && !Model.IsBlocked)
+        {
+            <form asp-controller="Comments" asp-action="Create" method="post" data-ajax="true" data-ajax-method="post"
+                data-ajax-success="handleReplySuccess" data-ajax-failure="handleAjaxError" data-ajax-mode="replace">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="articleId" value="@Model.ArticleId" />
+                <input type="hidden" name="parentCommentId" value="@Model.Id" />
+                <div class="form-group">
+                    <textarea class="form-control" name="content" rows="2" placeholder="Write a reply..."
+                        required></textarea>
+                </div>
+                <div class="mt-2">
+                    <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+                    <button type="button" class="btn btn-link btn-sm cancel-reply"
+                        data-comment-id="@Model.Id">Cancel</button>
+                </div>
+            </form>
+        }
     </div>
 
     @if (!isNestedReply)
     {
-        <div class="ms-5 mt-2" id="replies-@Model.Id">
+        <div class="mt-2" id="replies-@Model.Id">
             @if (hasReplies)
             {
                 <div class="load-replies">
@@ -136,3 +186,9 @@
         </div>
     }
 </div>
+
+<style>
+    .comment-blocked .card {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+</style>

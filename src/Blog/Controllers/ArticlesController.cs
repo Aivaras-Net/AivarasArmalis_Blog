@@ -4,23 +4,34 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Claims;
 using Blog.Services;
+using Blog.Services.Articles;
+using Blog.Services.Articles.Interfaces;
 
 namespace Blog.Controllers
 {
     public class ArticlesController : Controller
     {
-        private readonly IArticleService _articleService;
+        private readonly IArticleReader _articleReader;
+        private readonly IArticleWriter _articleWriter;
+        private readonly IArticleVoting _articleVoting;
+        private readonly IArticleMappingService _mapper;
         private readonly IValidationService _validationService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<ArticlesController> _logger;
 
         public ArticlesController(
-            IArticleService articleService,
+            IArticleReader articleReader,
+            IArticleWriter articleWriter,
+            IArticleVoting articleVoting,
+            IArticleMappingService mapper,
             IValidationService validationService,
             UserManager<ApplicationUser> userManager,
             ILogger<ArticlesController> logger)
         {
-            _articleService = articleService;
+            _articleReader = articleReader;
+            _articleWriter = articleWriter;
+            _articleVoting = articleVoting;
+            _mapper = mapper;
             _validationService = validationService;
             _userManager = userManager;
             _logger = logger;
@@ -28,7 +39,7 @@ namespace Blog.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var articles = await _articleService.GetAllArticlesAsync();
+            var articles = await _articleReader.GetAllArticlesAsync();
             return View(articles);
         }
 
@@ -39,7 +50,7 @@ namespace Blog.Controllers
                 return NotFound();
             }
 
-            var article = await _articleService.GetArticleByIdAsync(id);
+            var article = await _articleReader.GetArticleByIdAsync(id);
 
             if (article == null)
             {
@@ -49,7 +60,7 @@ namespace Blog.Controllers
             if (User.Identity != null && User.Identity.IsAuthenticated)
             {
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                var userVote = await _articleService.GetUserVoteAsync(article.Id, userId);
+                var userVote = await _articleVoting.GetUserVoteAsync(article.Id, userId);
                 ViewBag.CurrentUserVote = userVote;
             }
 
@@ -79,7 +90,7 @@ namespace Blog.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _logger.LogInformation(WebConstants.LogSetAuthorId, userId);
 
-            var createdArticle = await _articleService.CreateArticleAsync(article, userId ?? string.Empty);
+            var createdArticle = await _articleWriter.CreateArticleAsync(article, userId ?? string.Empty);
 
             if (createdArticle != null)
             {
@@ -99,7 +110,7 @@ namespace Blog.Controllers
                 return NotFound();
             }
 
-            var article = await _articleService.GetArticleByIdAsync(id);
+            var article = await _articleReader.GetArticleByIdAsync(id);
             if (article == null)
             {
                 return NotFound();
@@ -136,7 +147,7 @@ namespace Blog.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             bool isAdmin = User.IsInRole("Admin");
 
-            var updatedArticle = await _articleService.UpdateArticleAsync(article, userId ?? string.Empty, isAdmin);
+            var updatedArticle = await _articleWriter.UpdateArticleAsync(article, userId ?? string.Empty, isAdmin);
 
             if (updatedArticle != null)
             {
@@ -156,7 +167,7 @@ namespace Blog.Controllers
                 return NotFound();
             }
 
-            var article = await _articleService.GetArticleByIdAsync(id);
+            var article = await _articleReader.GetArticleByIdAsync(id);
 
             if (article == null)
             {
@@ -176,7 +187,7 @@ namespace Blog.Controllers
         [Authorize(Roles = "Admin,Writer")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var article = await _articleService.GetArticleByIdAsync(id);
+            var article = await _articleReader.GetArticleByIdAsync(id);
             if (article == null)
             {
                 return NotFound();
@@ -187,7 +198,7 @@ namespace Blog.Controllers
                 return Forbid();
             }
 
-            var result = await _articleService.DeleteArticleAsync(id);
+            var result = await _articleWriter.DeleteArticleAsync(id);
             if (result)
             {
                 _logger.LogInformation(WebConstants.ArticleDeleteSuccess);
@@ -209,7 +220,7 @@ namespace Blog.Controllers
                 return Unauthorized();
             }
 
-            var result = await _articleService.VoteAsync(id, userId, isUpvote);
+            var result = await _articleVoting.VoteAsync(id, userId, isUpvote);
             if (!result)
             {
                 _logger.LogWarning(WebConstants.LogVoteFailed, id);
@@ -230,7 +241,7 @@ namespace Blog.Controllers
                 return Unauthorized();
             }
 
-            var result = await _articleService.RemoveVoteAsync(id, userId);
+            var result = await _articleVoting.RemoveVoteAsync(id, userId);
             if (!result)
             {
                 _logger.LogWarning(WebConstants.LogRemoveVoteFailed, id);

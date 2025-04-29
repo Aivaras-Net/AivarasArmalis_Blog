@@ -5,6 +5,9 @@ using Blog.Services;
 using Microsoft.Extensions.FileProviders;
 using System.Runtime.Versioning;
 using Blog.Controllers;
+using Blog.Services.Comments;
+using Blog.Services.Articles;
+using Blog.Repositories;
 
 namespace Blog
 {
@@ -22,17 +25,28 @@ namespace Blog
             builder.Services.AddScoped<FileService>();
             builder.Services.AddScoped<InitialsProfileImageGenerator>();
 
-            builder.Services.AddScoped<IArticleService, ArticleService>();
+            builder.Services.AddArticleServices();
+            builder.Services.AddCommentServices();
+            builder.Services.AddValidationServices();
+
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
-            builder.Services.AddScoped<IValidationService, ValidationService>();
-            builder.Services.AddScoped<ICommentService, CommentService>();
+            builder.Services.AddScoped<ICommentReportService, CommentReportService>();
 
             builder.Services.AddScoped<ILogger<ArticlesController>, Logger<ArticlesController>>();
             builder.Services.AddScoped<ILogger<AccountController>, Logger<AccountController>>();
             builder.Services.AddScoped<ILogger<RolesController>, Logger<RolesController>>();
             builder.Services.AddScoped<ILogger<HomeController>, Logger<HomeController>>();
             builder.Services.AddScoped<ILogger<CommentsController>, Logger<CommentsController>>();
+            builder.Services.AddScoped<ILogger<CommentReportsController>, Logger<CommentReportsController>>();
+            builder.Services.AddScoped<ILogger<CommentReportService>, Logger<CommentReportService>>();
+            builder.Services.AddScoped<ILogger<ArticleRepository>, Logger<ArticleRepository>>();
+            builder.Services.AddScoped<ILogger<ArticleReader>, Logger<ArticleReader>>();
+            builder.Services.AddScoped<ILogger<ArticleWriter>, Logger<ArticleWriter>>();
+            builder.Services.AddScoped<ILogger<ArticleVoting>, Logger<ArticleVoting>>();
+            builder.Services.AddScoped<ILogger<CommentRepository>, Logger<CommentRepository>>();
+            builder.Services.AddScoped<ILogger<CommentReader>, Logger<CommentReader>>();
+            builder.Services.AddScoped<ILogger<CommentManager>, Logger<CommentManager>>();
 
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
