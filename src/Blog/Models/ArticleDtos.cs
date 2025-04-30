@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Blog.Models.Dtos
 {
@@ -22,12 +23,26 @@ namespace Blog.Models.Dtos
         public DateTime PublishedDate { get; set; }
 
         public DateTime? LastUpdated { get; set; }
+    }
 
-        public int VoteScore { get; set; }
+    /// <summary>
+    /// Author information DTO
+    /// </summary>
+    public class AuthorDto
+    {
+        public string Name { get; set; } = string.Empty;
+    }
 
+    /// <summary>
+    /// Voting statistics DTO
+    /// </summary>
+    public class VoteStatsDto
+    {
+        public int Score { get; set; }
         public int UpvoteCount { get; set; }
-
         public int DownvoteCount { get; set; }
+        public bool? CurrentUserVoted { get; set; }
+        public bool? CurrentUserVotedUp { get; set; }
     }
 
     /// <summary>
@@ -35,11 +50,14 @@ namespace Blog.Models.Dtos
     /// </summary>
     public class ArticleListItemDto : ArticleBaseDto
     {
-        public string? AuthorName { get; set; }
+        [JsonPropertyOrder(1000)]
+        public string? Content { get; set; }
 
-        public string? AuthorId { get; set; }
+        [JsonPropertyOrder(1001)]
+        public AuthorDto Author { get; set; } = new AuthorDto();
 
-        public string? AuthorProfilePicture { get; set; }
+        [JsonPropertyOrder(1002)]
+        public VoteStatsDto Votes { get; set; } = new VoteStatsDto();
     }
 
     /// <summary>
@@ -47,13 +65,8 @@ namespace Blog.Models.Dtos
     /// </summary>
     public class ArticleDetailDto : ArticleListItemDto
     {
-        public string? Content { get; set; }
-
+        [JsonPropertyOrder(1003)]
         public ICollection<CommentDto> Comments { get; set; } = new List<CommentDto>();
-
-        public bool? CurrentUserVoted { get; set; }
-
-        public bool? CurrentUserVotedUp { get; set; }
     }
 
     /// <summary>
@@ -103,9 +116,7 @@ namespace Blog.Models.Dtos
 
         public DateTime CreatedAt { get; set; }
 
-        public string? AuthorName { get; set; }
-
-        public string? AuthorProfilePicture { get; set; }
+        public AuthorDto Author { get; set; } = new AuthorDto();
 
         public int? ParentCommentId { get; set; }
 

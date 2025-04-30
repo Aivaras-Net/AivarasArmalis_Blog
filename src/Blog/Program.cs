@@ -8,6 +8,9 @@ using Blog.Controllers;
 using Blog.Services.Comments;
 using Blog.Services.Articles;
 using Blog.Repositories;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace Blog
 {
@@ -34,6 +37,7 @@ namespace Blog
             builder.Services.AddScoped<ICommentReportService, CommentReportService>();
 
             builder.Services.AddScoped<ILogger<ArticlesController>, Logger<ArticlesController>>();
+            builder.Services.AddScoped<ILogger<Controllers.Api.ArticlesApiController>, Logger<Controllers.Api.ArticlesApiController>>();
             builder.Services.AddScoped<ILogger<AccountController>, Logger<AccountController>>();
             builder.Services.AddScoped<ILogger<RolesController>, Logger<RolesController>>();
             builder.Services.AddScoped<ILogger<HomeController>, Logger<HomeController>>();
@@ -68,7 +72,58 @@ namespace Blog
                     builder.Configuration.GetValue<int>("Cookie:ExpireTimeSpan"));
             });
 
-            builder.Services.AddControllersWithViews();
+            builder.Services.AddControllersWithViews()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+                    options.JsonSerializerOptions.WriteIndented = true;
+                });
+
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Blog API",
+                    Version = "v1",
+                    Description = "Blog application API",
+                    Contact = new OpenApiContact
+                    {
+                        Name = "Blog Admin"
+                    }
+                });
+
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                if (File.Exists(xmlPath))
+                {
+                    c.IncludeXmlComments(xmlPath);
+                }
+
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Description = "JWT Authorization header using the Bearer scheme",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            });
 
             builder.Services.AddSingleton(EnvSettingsLoader.LoadEmailSettings());
             builder.Services.AddTransient<IEmailSender, EmailSender>();
@@ -114,6 +169,15 @@ namespace Blog
                 app.UseExceptionHandler("/Home/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
+            }
+            else
+            {
+                // Enable Swagger UI in development
+                app.UseSwagger();
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Blog API v1");
+                });
             }
 
             app.UseHttpsRedirection();

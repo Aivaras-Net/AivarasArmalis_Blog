@@ -27,15 +27,20 @@ namespace Blog.Services.Articles
                 Id = article.Id,
                 Title = article.Title,
                 Summary = article.Summary,
+                Content = article.Content,
                 ImageUrl = article.ImageUrl,
                 PublishedDate = article.PublishedDate,
                 LastUpdated = article.LastUpdated,
-                VoteScore = article.VoteScore,
-                UpvoteCount = article.UpvoteCount,
-                DownvoteCount = article.DownvoteCount,
-                AuthorId = article.AuthorId,
-                AuthorName = article.Author != null ? $"{article.Author.FirstName} {article.Author.LastName}" : null,
-                AuthorProfilePicture = article.Author?.ProfilePicturePath
+                Author = new AuthorDto
+                {
+                    Name = article.Author != null ? $"{article.Author.FirstName} {article.Author.LastName}" : string.Empty
+                },
+                Votes = new VoteStatsDto
+                {
+                    Score = article.VoteScore,
+                    UpvoteCount = article.UpvoteCount,
+                    DownvoteCount = article.DownvoteCount
+                }
             };
         }
 
@@ -55,14 +60,18 @@ namespace Blog.Services.Articles
                 ImageUrl = article.ImageUrl,
                 PublishedDate = article.PublishedDate,
                 LastUpdated = article.LastUpdated,
-                VoteScore = article.VoteScore,
-                UpvoteCount = article.UpvoteCount,
-                DownvoteCount = article.DownvoteCount,
-                AuthorId = article.AuthorId,
-                AuthorName = article.Author != null ? $"{article.Author.FirstName} {article.Author.LastName}" : null,
-                AuthorProfilePicture = article.Author?.ProfilePicturePath,
-                CurrentUserVoted = userVote != null,
-                CurrentUserVotedUp = userVote?.IsUpvote
+                Author = new AuthorDto
+                {
+                    Name = article.Author != null ? $"{article.Author.FirstName} {article.Author.LastName}" : string.Empty
+                },
+                Votes = new VoteStatsDto
+                {
+                    Score = article.VoteScore,
+                    UpvoteCount = article.UpvoteCount,
+                    DownvoteCount = article.DownvoteCount,
+                    CurrentUserVoted = userVote != null,
+                    CurrentUserVotedUp = userVote?.IsUpvote
+                }
             };
 
             if (article.Comments != null && article.Comments.Any())
@@ -108,8 +117,10 @@ namespace Blog.Services.Articles
                 Id = comment.Id,
                 Content = comment.Content,
                 CreatedAt = comment.CreatedAt,
-                AuthorName = comment.Author != null ? $"{comment.Author.FirstName} {comment.Author.LastName}" : null,
-                AuthorProfilePicture = comment.Author?.ProfilePicturePath,
+                Author = new AuthorDto
+                {
+                    Name = comment.Author != null ? $"{comment.Author.FirstName} {comment.Author.LastName}" : string.Empty
+                },
                 ParentCommentId = comment.ParentCommentId
             };
 
