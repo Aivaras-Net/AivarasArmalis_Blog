@@ -11,6 +11,8 @@ using Blog.Repositories;
 using Microsoft.OpenApi.Models;
 using System.Reflection;
 using System.Text.Json.Serialization;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace Blog
 {
@@ -38,6 +40,7 @@ namespace Blog
 
             builder.Services.AddScoped<ILogger<ArticlesController>, Logger<ArticlesController>>();
             builder.Services.AddScoped<ILogger<Controllers.Api.ArticlesApiController>, Logger<Controllers.Api.ArticlesApiController>>();
+            builder.Services.AddScoped<ILogger<Controllers.Api.AuthController>, Logger<Controllers.Api.AuthController>>();
             builder.Services.AddScoped<ILogger<AccountController>, Logger<AccountController>>();
             builder.Services.AddScoped<ILogger<RolesController>, Logger<RolesController>>();
             builder.Services.AddScoped<ILogger<HomeController>, Logger<HomeController>>();
@@ -64,6 +67,34 @@ namespace Blog
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
+
+            var jwtSettings = EnvSettingsLoader.LoadJwtSettings();
+            builder.Services.AddSingleton(jwtSettings);
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
+                options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
+                options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.SaveToken = true;
+                options.RequireHttpsMetadata = false;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtSettings.ValidIssuer,
+                    ValidAudience = jwtSettings.ValidAudience,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(!string.IsNullOrEmpty(jwtSettings.Secret)
+                            ? jwtSettings.Secret
+                            : throw new InvalidOperationException("JWT secret key is not configured. Please set JWT_SECRET in your environment variables.")))
+                };
+            });
 
             builder.Services.ConfigureApplicationCookie(options =>
             {

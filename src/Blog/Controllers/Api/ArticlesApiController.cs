@@ -1,10 +1,10 @@
-using Blog.Models;
 using Blog.Models.Dtos;
 using Blog.Services.Articles;
 using Blog.Services.Articles.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Blog.Models;
 
 namespace Blog.Controllers.Api
 {
@@ -127,10 +127,7 @@ namespace Blog.Controllers.Api
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateArticle(int id, [FromBody] ArticleUpdateDto articleDto)
         {
-            if (id != articleDto.Id)
-            {
-                return BadRequest();
-            }
+            articleDto.Id = id;
 
             if (!ModelState.IsValid)
             {
@@ -205,73 +202,5 @@ namespace Blog.Controllers.Api
             return NoContent();
         }
 
-        /// <summary>
-        /// Votes on an article
-        /// </summary>
-        /// <param name="id">The article id</param>
-        /// <param name="isUpvote">True for upvote, false for downvote</param>
-        /// <returns>No content if successful</returns>
-        [HttpPost("{id}/vote")]
-        [Authorize(Roles = "Admin,Critic")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> VoteArticle(int id, [FromQuery] bool isUpvote)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized();
-            }
-
-            // Check if article exists
-            if (!_articleReader.ArticleExists(id))
-            {
-                return NotFound();
-            }
-
-            var result = await _articleVoting.VoteAsync(id, userId, isUpvote);
-            if (!result)
-            {
-                return BadRequest("Failed to vote on article");
-            }
-
-            return NoContent();
-        }
-
-        /// <summary>
-        /// Removes a vote from an article
-        /// </summary>
-        /// <param name="id">The article id</param>
-        /// <returns>No content if successful</returns>
-        [HttpDelete("{id}/vote")]
-        [Authorize(Roles = "Admin,Critic")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> RemoveVote(int id)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (string.IsNullOrEmpty(userId))
-            {
-                return Unauthorized();
-            }
-
-            // Check if article exists
-            if (!_articleReader.ArticleExists(id))
-            {
-                return NotFound();
-            }
-
-            var result = await _articleVoting.RemoveVoteAsync(id, userId);
-            if (!result)
-            {
-                return BadRequest("Failed to remove vote");
-            }
-
-            return NoContent();
-        }
     }
 }

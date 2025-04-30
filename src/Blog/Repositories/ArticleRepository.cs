@@ -80,9 +80,20 @@ namespace Blog.Repositories
         {
             try
             {
-                _context.Articles.Update(article);
+                var existingArticle = await _context.Articles.FindAsync(article.Id);
+                if (existingArticle == null)
+                {
+                    return null;
+                }
+
+                existingArticle.Title = article.Title;
+                existingArticle.Summary = article.Summary;
+                existingArticle.Content = article.Content;
+                existingArticle.ImageUrl = article.ImageUrl;
+                existingArticle.LastUpdated = article.LastUpdated;
+
                 await _context.SaveChangesAsync();
-                return article;
+                return existingArticle;
             }
             catch (Exception ex)
             {

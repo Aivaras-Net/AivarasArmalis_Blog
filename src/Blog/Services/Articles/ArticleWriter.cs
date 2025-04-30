@@ -60,14 +60,16 @@ namespace Blog.Services.Articles
                     return null;
                 }
 
-                article.AuthorId = existingArticle.AuthorId;
-                article.PublishedDate = existingArticle.PublishedDate;
-                article.LastUpdated = DateTime.Now;
+                existingArticle.Title = article.Title;
+                existingArticle.Summary = article.Summary;
+                existingArticle.Content = article.Content;
+                existingArticle.ImageUrl = article.ImageUrl;
+                existingArticle.LastUpdated = DateTime.Now;
 
-                await _repository.UpdateAsync(article);
+                var updatedArticle = await _repository.UpdateAsync(existingArticle);
                 _logger.LogInformation(WebConstants.LogArticleUpdated);
 
-                return article;
+                return updatedArticle;
             }
             catch (Exception ex)
             {

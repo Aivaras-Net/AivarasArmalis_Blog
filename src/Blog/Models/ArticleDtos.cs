@@ -92,6 +92,7 @@ namespace Blog.Models.Dtos
     /// </summary>
     public class ArticleUpdateDto : ArticleCreateDto
     {
+        [JsonIgnore]
         public int Id { get; set; }
     }
 
