@@ -2,7 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Blog.Models;
-using Blog.Services;
+using Blog.Services.Comments.Interfaces;
+using Blog.Services.Articles.Interfaces;
 
 namespace Blog.Controllers
 {
@@ -10,18 +11,18 @@ namespace Blog.Controllers
     public class CommentsController : Controller
     {
         private readonly ICommentService _commentService;
-        private readonly IArticleService _articleService;
+        private readonly IArticleReader _articleReader;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly ILogger<CommentsController> _logger;
 
         public CommentsController(
             ICommentService commentService,
-            IArticleService articleService,
+            IArticleReader articleReader,
             UserManager<ApplicationUser> userManager,
             ILogger<CommentsController> logger)
         {
             _commentService = commentService;
-            _articleService = articleService;
+            _articleReader = articleReader;
             _userManager = userManager;
             _logger = logger;
         }
@@ -32,13 +33,13 @@ namespace Blog.Controllers
         {
             if (string.IsNullOrWhiteSpace(content))
             {
-                return BadRequest("Comment content cannot be empty");
+                return BadRequest(WebConstants.CommentContentEmpty);
             }
 
-            var article = await _articleService.GetArticleByIdAsync(articleId);
+            var article = await _articleReader.GetArticleByIdAsync(articleId);
             if (article == null)
             {
-                return NotFound("Article not found");
+                return NotFound(WebConstants.NotFound);
             }
 
             int? rootCommentId = null;
@@ -47,7 +48,7 @@ namespace Blog.Controllers
                 var parentComment = await _commentService.GetCommentByIdAsync(parentCommentId.Value);
                 if (parentComment == null)
                 {
-                    return NotFound("Parent comment not found");
+                    return NotFound(WebConstants.CommentNotFound);
                 }
 
                 if (parentComment.ParentCommentId.HasValue)
@@ -71,7 +72,7 @@ namespace Blog.Controllers
             var createdComment = await _commentService.CreateCommentAsync(comment, userId);
             if (createdComment == null)
             {
-                return StatusCode(500, "Failed to create comment");
+                return StatusCode(500, WebConstants.CommentCreationError);
             }
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -96,7 +97,18 @@ namespace Blog.Controllers
         {
             if (string.IsNullOrWhiteSpace(content))
             {
-                return BadRequest("Comment content cannot be empty");
+                return BadRequest(WebConstants.CommentContentEmpty);
+            }
+
+            var comment = await _commentService.GetCommentByIdAsync(id);
+            if (comment == null)
+            {
+                return NotFound(WebConstants.CommentNotFound);
+            }
+
+            if (comment.IsBlocked && !User.IsInRole("Admin"))
+            {
+                return BadRequest(WebConstants.CommentBlocked);
             }
 
             var userId = _userManager.GetUserId(User);
@@ -105,7 +117,7 @@ namespace Blog.Controllers
             var updatedComment = await _commentService.UpdateCommentAsync(id, content, userId, isAdmin);
             if (updatedComment == null)
             {
-                return NotFound("Comment not found or you don't have permission to edit it");
+                return NotFound(WebConstants.CommentUpdateError);
             }
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -123,7 +135,12 @@ namespace Blog.Controllers
             var comment = await _commentService.GetCommentByIdAsync(id);
             if (comment == null)
             {
-                return NotFound("Comment not found");
+                return NotFound(WebConstants.CommentNotFound);
+            }
+
+            if (comment.IsBlocked && !User.IsInRole("Admin"))
+            {
+                return BadRequest(WebConstants.CommentBlockedAdminOnly);
             }
 
             var userId = _userManager.GetUserId(User);
@@ -132,7 +149,7 @@ namespace Blog.Controllers
             var result = await _commentService.DeleteCommentAsync(id, userId, isAdmin);
             if (!result)
             {
-                return StatusCode(500, "Failed to delete comment");
+                return StatusCode(500, WebConstants.CommentDeleteError);
             }
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -147,7 +164,8 @@ namespace Blog.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> GetReplies(int commentId)
         {
-            var replies = await _commentService.GetRepliesAsync(commentId);
+            bool includeBlocked = User.IsInRole("Admin");
+            var replies = await _commentService.GetRepliesAsync(commentId, includeBlocked);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {

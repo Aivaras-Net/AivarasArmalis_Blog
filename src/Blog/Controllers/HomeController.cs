@@ -1,24 +1,24 @@
 using Blog.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using Blog.Services;
 using Microsoft.EntityFrameworkCore;
+using Blog.Services.Articles.Interfaces;
 
 namespace Blog.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-        private readonly IArticleService _articleService;
+        private readonly IArticleReader _articleReader;
         private readonly ApplicationDbContext _context;
 
         public HomeController(
             ILogger<HomeController> logger,
-            IArticleService articleService,
+            IArticleReader articleReader,
             ApplicationDbContext context)
         {
             _logger = logger;
-            _articleService = articleService;
+            _articleReader = articleReader;
             _context = context;
         }
 
@@ -61,7 +61,7 @@ namespace Blog.Controllers
             {
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 {
-                    return Json(new { success = false, message = "Search term is required" });
+                    return Json(new { success = false, message = WebConstants.SearchTermRequired });
                 }
                 return RedirectToAction(nameof(Index));
             }

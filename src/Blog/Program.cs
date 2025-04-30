@@ -5,6 +5,14 @@ using Blog.Services;
 using Microsoft.Extensions.FileProviders;
 using System.Runtime.Versioning;
 using Blog.Controllers;
+using Blog.Services.Comments;
+using Blog.Services.Articles;
+using Blog.Repositories;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
+using System.Text.Json.Serialization;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace Blog
 {
@@ -22,17 +30,30 @@ namespace Blog
             builder.Services.AddScoped<FileService>();
             builder.Services.AddScoped<InitialsProfileImageGenerator>();
 
-            builder.Services.AddScoped<IArticleService, ArticleService>();
+            builder.Services.AddArticleServices();
+            builder.Services.AddCommentServices();
+            builder.Services.AddValidationServices();
+
             builder.Services.AddScoped<IAccountService, AccountService>();
             builder.Services.AddScoped<IRoleService, RoleService>();
-            builder.Services.AddScoped<IValidationService, ValidationService>();
-            builder.Services.AddScoped<ICommentService, CommentService>();
+            builder.Services.AddScoped<ICommentReportService, CommentReportService>();
 
             builder.Services.AddScoped<ILogger<ArticlesController>, Logger<ArticlesController>>();
+            builder.Services.AddScoped<ILogger<Controllers.Api.ArticlesApiController>, Logger<Controllers.Api.ArticlesApiController>>();
+            builder.Services.AddScoped<ILogger<Controllers.Api.AuthController>, Logger<Controllers.Api.AuthController>>();
             builder.Services.AddScoped<ILogger<AccountController>, Logger<AccountController>>();
             builder.Services.AddScoped<ILogger<RolesController>, Logger<RolesController>>();
             builder.Services.AddScoped<ILogger<HomeController>, Logger<HomeController>>();
             builder.Services.AddScoped<ILogger<CommentsController>, Logger<CommentsController>>();
+            builder.Services.AddScoped<ILogger<CommentReportsController>, Logger<CommentReportsController>>();
+            builder.Services.AddScoped<ILogger<CommentReportService>, Logger<CommentReportService>>();
+            builder.Services.AddScoped<ILogger<ArticleRepository>, Logger<ArticleRepository>>();
+            builder.Services.AddScoped<ILogger<ArticleReader>, Logger<ArticleReader>>();
+            builder.Services.AddScoped<ILogger<ArticleWriter>, Logger<ArticleWriter>>();
+            builder.Services.AddScoped<ILogger<ArticleVoting>, Logger<ArticleVoting>>();
+            builder.Services.AddScoped<ILogger<CommentRepository>, Logger<CommentRepository>>();
+            builder.Services.AddScoped<ILogger<CommentReader>, Logger<CommentReader>>();
+            builder.Services.AddScoped<ILogger<CommentManager>, Logger<CommentManager>>();
 
             builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
             {
@@ -47,6 +68,34 @@ namespace Blog
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
+            var jwtSettings = EnvSettingsLoader.LoadJwtSettings();
+            builder.Services.AddSingleton(jwtSettings);
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = IdentityConstants.ApplicationScheme;
+                options.DefaultChallengeScheme = IdentityConstants.ApplicationScheme;
+                options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.SaveToken = true;
+                options.RequireHttpsMetadata = false;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtSettings.ValidIssuer,
+                    ValidAudience = jwtSettings.ValidAudience,
+                    IssuerSigningKey = new SymmetricSecurityKey(
+                        Encoding.UTF8.GetBytes(!string.IsNullOrEmpty(jwtSettings.Secret)
+                            ? jwtSettings.Secret
+                            : throw new InvalidOperationException("JWT secret key is not configured. Please set JWT_SECRET in your environment variables.")))
+                };
+            });
+
             builder.Services.ConfigureApplicationCookie(options =>
             {
                 builder.Configuration.GetSection("Cookie").Bind(options);
@@ -54,7 +103,58 @@ namespace Blog
                     builder.Configuration.GetValue<int>("Cookie:ExpireTimeSpan"));
             });
 
-            builder.Services.AddControllersWithViews();
+            builder.Services.AddControllersWithViews()
+                .AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+                    options.JsonSerializerOptions.WriteIndented = true;
+                });
+
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo
+                {
+                    Title = "Blog API",
+                    Version = "v1",
+                    Description = "Blog application API",
+                    Contact = new OpenApiContact
+                    {
+                        Name = "Blog Admin"
+                    }
+                });
+
+                var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+                var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+                if (File.Exists(xmlPath))
+                {
+                    c.IncludeXmlComments(xmlPath);
+                }
+
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+                {
+                    Description = "JWT Authorization header using the Bearer scheme",
+                    Name = "Authorization",
+                    In = ParameterLocation.Header,
+                    Type = SecuritySchemeType.ApiKey,
+                    Scheme = "Bearer"
+                });
+
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement
+                {
+                    {
+                        new OpenApiSecurityScheme
+                        {
+                            Reference = new OpenApiReference
+                            {
+                                Type = ReferenceType.SecurityScheme,
+                                Id = "Bearer"
+                            }
+                        },
+                        Array.Empty<string>()
+                    }
+                });
+            });
 
             builder.Services.AddSingleton(EnvSettingsLoader.LoadEmailSettings());
             builder.Services.AddTransient<IEmailSender, EmailSender>();
@@ -100,6 +200,15 @@ namespace Blog
                 app.UseExceptionHandler("/Home/Error");
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
+            }
+            else
+            {
+                // Enable Swagger UI in development
+                app.UseSwagger();
+                app.UseSwaggerUI(c =>
+                {
+                    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Blog API v1");
+                });
             }
 
             app.UseHttpsRedirection();

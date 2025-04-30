@@ -1,7 +1,7 @@
 using Blog.Models;
 using Microsoft.AspNetCore.Identity;
 
-namespace Blog.Services
+namespace Blog.Services.Articles
 {
     public interface IAccountService
     {

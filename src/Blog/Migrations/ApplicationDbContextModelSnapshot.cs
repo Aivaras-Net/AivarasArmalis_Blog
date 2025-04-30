@@ -145,12 +145,24 @@ namespace Blog.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("BlockReason")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("BlockedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BlockedById")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsBlocked")
+                        .HasColumnType("INTEGER");
 
                     b.Property<int?>("ParentCommentId")
                         .HasColumnType("INTEGER");
@@ -164,9 +176,60 @@ namespace Blog.Migrations
 
                     b.HasIndex("AuthorId");
 
+                    b.HasIndex("BlockedById");
+
                     b.HasIndex("ParentCommentId");
 
                     b.ToTable("Comments");
+                });
+
+            modelBuilder.Entity("Blog.Models.CommentReport", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("CommentId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReportDetails")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReporterId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReviewNotes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReviewerId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CommentId");
+
+                    b.HasIndex("ReviewerId");
+
+                    b.HasIndex("ReporterId", "CommentId")
+                        .IsUnique();
+
+                    b.ToTable("CommentReports");
                 });
 
             modelBuilder.Entity("Blog.Models.Vote", b =>
@@ -351,6 +414,11 @@ namespace Blog.Migrations
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
 
+                    b.HasOne("Blog.Models.ApplicationUser", "BlockedBy")
+                        .WithMany()
+                        .HasForeignKey("BlockedById")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Blog.Models.Comment", "ParentComment")
                         .WithMany("Replies")
                         .HasForeignKey("ParentCommentId")
@@ -360,7 +428,35 @@ namespace Blog.Migrations
 
                     b.Navigation("Author");
 
+                    b.Navigation("BlockedBy");
+
                     b.Navigation("ParentComment");
+                });
+
+            modelBuilder.Entity("Blog.Models.CommentReport", b =>
+                {
+                    b.HasOne("Blog.Models.Comment", "Comment")
+                        .WithMany("Reports")
+                        .HasForeignKey("CommentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Blog.Models.ApplicationUser", "Reporter")
+                        .WithMany()
+                        .HasForeignKey("ReporterId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Blog.Models.ApplicationUser", "Reviewer")
+                        .WithMany()
+                        .HasForeignKey("ReviewerId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.Navigation("Comment");
+
+                    b.Navigation("Reporter");
+
+                    b.Navigation("Reviewer");
                 });
 
             modelBuilder.Entity("Blog.Models.Vote", b =>
@@ -443,6 +539,8 @@ namespace Blog.Migrations
             modelBuilder.Entity("Blog.Models.Comment", b =>
                 {
                     b.Navigation("Replies");
+
+                    b.Navigation("Reports");
                 });
 #pragma warning restore 612, 618
         }
