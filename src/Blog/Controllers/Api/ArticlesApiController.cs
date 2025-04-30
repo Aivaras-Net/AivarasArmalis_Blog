@@ -39,10 +39,10 @@ namespace Blog.Controllers.Api
         /// <returns>A list of all articles</returns>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<ArticleListItemDto>>> GetArticles()
+        public async Task<ActionResult<IEnumerable<ArticleBriefDto>>> GetArticles()
         {
             var articles = await _articleReader.GetAllArticlesAsync();
-            var articleDtos = _mapper.MapToListItemDto(articles);
+            var articleDtos = _mapper.MapToBriefDto(articles);
             return Ok(articleDtos);
         }
 

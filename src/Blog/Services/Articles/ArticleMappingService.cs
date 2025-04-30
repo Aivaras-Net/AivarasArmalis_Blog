@@ -10,6 +10,8 @@ namespace Blog.Services.Articles
     {
         ArticleListItemDto MapToListItemDto(Article article);
         List<ArticleListItemDto> MapToListItemDto(IEnumerable<Article> articles);
+        ArticleBriefDto MapToBriefDto(Article article);
+        List<ArticleBriefDto> MapToBriefDto(IEnumerable<Article> articles);
         ArticleDetailDto MapToDetailDto(Article article, Vote? userVote = null);
         Article MapCreateDtoToEntity(ArticleCreateDto dto);
         Article MapUpdateDtoToEntity(ArticleUpdateDto dto, Article existingArticle);
@@ -47,6 +49,27 @@ namespace Blog.Services.Articles
         public List<ArticleListItemDto> MapToListItemDto(IEnumerable<Article> articles)
         {
             return articles.Select(MapToListItemDto).ToList();
+        }
+
+        public ArticleBriefDto MapToBriefDto(Article article)
+        {
+            return new ArticleBriefDto
+            {
+                Id = article.Id,
+                Title = article.Title,
+                Summary = article.Summary,
+                ImageUrl = article.ImageUrl,
+                PublishedDate = article.PublishedDate,
+                Author = new AuthorDto
+                {
+                    Name = article.Author != null ? $"{article.Author.FirstName} {article.Author.LastName}" : string.Empty
+                }
+            };
+        }
+
+        public List<ArticleBriefDto> MapToBriefDto(IEnumerable<Article> articles)
+        {
+            return articles.Select(MapToBriefDto).ToList();
         }
 
         public ArticleDetailDto MapToDetailDto(Article article, Vote? userVote = null)

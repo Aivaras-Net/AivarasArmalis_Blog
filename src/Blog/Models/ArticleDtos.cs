@@ -34,6 +34,24 @@ namespace Blog.Models.Dtos
     }
 
     /// <summary>
+    /// Simplified DTO for article list view with minimal information
+    /// </summary>
+    public class ArticleBriefDto
+    {
+        public int Id { get; set; }
+
+        public string Title { get; set; } = string.Empty;
+
+        public string? Summary { get; set; }
+
+        public string? ImageUrl { get; set; }
+
+        public DateTime PublishedDate { get; set; }
+
+        public AuthorDto Author { get; set; } = new AuthorDto();
+    }
+
+    /// <summary>
     /// Voting statistics DTO
     /// </summary>
     public class VoteStatsDto
